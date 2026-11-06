@@ -1,0 +1,248 @@
+/* =========================================================================
+   Digit Impact Studio — finitions visuelles (macOS), champs, flèches, boutons, écran de connexion animé
+   ========================================================================= */
+
+/* ---------- En-tête : jamais de textes qui se chevauchent ---------- */
+.topbar { gap: 12px; }
+.topbar-left { flex: 1 1 0; min-width: 0; flex-wrap: nowrap; overflow: hidden; }
+.topbar-left > * { flex-shrink: 0; }
+.topbar-left > div { flex-shrink: 1; min-width: 0; }
+#loggedUserName { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-right { gap: 8px; }
+@media (max-width: 1180px) {
+  #roleBadge { display: none; }
+  #topCloudSyncBtn span:not([class^="status-dot"]) { display: none; }
+}
+@media (max-width: 1040px) {
+  .topbar-right .top-icon-btn { width: 38px; height: 38px; }
+}
+
+/* ---------- Intégration macOS : barre de titre fondue dans l'application ---------- */
+body.mac-desktop .sidebar-header { height: auto; min-height: 84px; padding-top: 46px; padding-bottom: 14px; }
+body.mac-desktop .topbar { -webkit-app-region: drag; }
+body.mac-desktop .topbar button, body.mac-desktop .topbar select, body.mac-desktop .topbar input,
+body.mac-desktop .topbar a, body.mac-desktop .topbar [onclick], body.mac-desktop .topbar .theme-switcher-group {
+  -webkit-app-region: no-drag;
+}
+.mac-drag-strip { display: none; }
+body.mac-desktop .mac-drag-strip { display: block; position: fixed; top: 0; left: 0; right: 0; height: 30px; -webkit-app-region: drag; z-index: 600; }
+body.mac-desktop .sidebar-header { -webkit-app-region: drag; }
+body.mac-desktop .sidebar-header * { -webkit-app-region: no-drag; }
+
+/* ---------- Champs nombre : flèches élégantes (plus de petite flèche blanche) ---------- */
+input[type="number"] {
+  -moz-appearance: textfield; appearance: textfield;
+  padding-right: 26px !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='18' viewBox='0 0 10 18' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 6.5 5 3.5 8 6.5'/%3E%3Cpath d='M2 11.5 5 14.5 8 11.5'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 9px center !important;
+  background-size: 10px 18px !important;
+  cursor: text;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0; display: none; }
+input[type="number"]:hover { border-color: rgba(148,163,184,0.55); }
+
+/* ---------- Listes déroulantes : flèche fine et alignée ---------- */
+select {
+  -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.5 1.5 6 6 10.5 1.5'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  background-size: 12px 8px !important;
+  padding-right: 36px !important;
+  cursor: pointer;
+}
+select:hover { border-color: rgba(148,163,184,0.55); }
+select option { background: #16181d; color: #f1f5f9; }
+
+/* ---------- Choix de fichier : vrai bouton moderne ---------- */
+input[type="file"] { font-size: 12.5px; color: var(--text-muted); cursor: pointer; }
+input[type="file"]::file-selector-button {
+  appearance: none; -webkit-appearance: none;
+  margin-right: 12px; padding: 8px 16px; border-radius: 10px;
+  border: 1px solid var(--border); background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04));
+  color: var(--text-main); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
+  transition: background .15s, border-color .15s, transform .1s;
+}
+input[type="file"]::file-selector-button:hover { border-color: #ea1d2c; background: rgba(234,29,44,0.14); }
+input[type="file"]::file-selector-button:active { transform: scale(0.97); }
+
+/* ---------- Écran de connexion animé : l'univers du multimédia ---------- */
+.auth-screen { overflow: hidden; }
+.auth-screen .auth-card { position: relative; z-index: 2; backdrop-filter: blur(6px); }
+.mm-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.mm-orb { position: absolute; border-radius: 50%; filter: blur(70px); opacity: .55; animation: mmOrb 22s ease-in-out infinite alternate; }
+.mm-orb.o1 { width: 46vmax; height: 46vmax; left: -12vmax; top: -14vmax; background: radial-gradient(circle, rgba(234,29,44,.55), transparent 65%); }
+.mm-orb.o2 { width: 40vmax; height: 40vmax; right: -12vmax; bottom: -16vmax; background: radial-gradient(circle, rgba(59,130,246,.50), transparent 65%); animation-duration: 28s; }
+.mm-orb.o3 { width: 28vmax; height: 28vmax; right: 18%; top: -10vmax; background: radial-gradient(circle, rgba(250,204,21,.22), transparent 65%); animation-duration: 33s; }
+@keyframes mmOrb { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(4vmax,3vmax,0) scale(1.12); } }
+.mm-ico { position: absolute; color: #fff; opacity: .24; animation: mmFloat var(--d, 14s) ease-in-out var(--delay, 0s) infinite alternate; will-change: transform; }
+.mm-ico svg { width: 100%; height: 100%; display: block; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 14px currentColor); }
+.mm-ico.red { color: #ff4655; } .mm-ico.blue { color: #60a5fa; } .mm-ico.gold { color: #fbbf24; }
+@keyframes mmFloat {
+  0%   { transform: translate3d(0,0,0) rotate(var(--r0, -6deg)); }
+  100% { transform: translate3d(var(--dx, 18px), var(--dy, -26px), 0) rotate(var(--r1, 8deg)); }
+}
+.mm-strip { position: absolute; left: -10%; width: 120%; height: 54px; bottom: 9%; transform: rotate(-4deg); opacity: .13;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 14px, #fff 14px 26px, transparent 26px 40px) top 6px left 0/40px 8px repeat-x,
+    repeating-linear-gradient(90deg, transparent 0 14px, #fff 14px 26px, transparent 26px 40px) bottom 6px left 0/40px 8px repeat-x,
+    linear-gradient(#fff, #fff) center/100% 1px no-repeat;
+  border-top: 1px solid rgba(255,255,255,.6); border-bottom: 1px solid rgba(255,255,255,.6);
+  animation: mmStrip 18s linear infinite; }
+@keyframes mmStrip { from { background-position: top 6px left 0, bottom 6px left 0, center; } to { background-position: top 6px left 400px, bottom 6px left 400px, center; } }
+.mm-rec { position: absolute; top: 34px; right: 34px; display: flex; align-items: center; gap: 9px; color: #fff; font: 700 12.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 1.4px; opacity: .8; }
+.mm-rec i { width: 11px; height: 11px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 12px #ef4444; animation: mmBlink 1.2s steps(2, jump-none) infinite; }
+@keyframes mmBlink { 0% { opacity: 1; } 100% { opacity: .15; } }
+.mm-vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,.55) 100%); }
+@media (prefers-reduced-motion: reduce) { .mm-ico, .mm-orb, .mm-strip, .mm-rec i { animation: none !important; } }
+
+/* ---------- Réglage du cachet ---------- */
+.stamp-adj-overlay { position: fixed; inset: 0; z-index: 9100; background: rgba(0,0,0,.72); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.stamp-adj-card { width: 100%; max-width: 520px; max-height: 94vh; overflow-y: auto; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border); border-radius: 18px; padding: 22px; box-shadow: 0 30px 70px rgba(0,0,0,.7); }
+.stamp-adj-preview { display: flex; justify-content: center; padding: 16px; margin: 14px 0; background: #f1f5f9; border-radius: 12px; border: 1px dashed #94a3b8; }
+.stamp-adj-box { width: 195px; height: 120px; background: #fff; border-radius: 8px; box-shadow: inset 0 0 0 1px #cbd5e1; display: flex; align-items: center; justify-content: center; overflow: hidden; zoom: 1.35; }
+.stamp-adj-row { display: grid; grid-template-columns: 110px 1fr 54px; gap: 10px; align-items: center; margin: 10px 0; font-size: 12.5px; font-weight: 600; }
+.stamp-adj-row output { text-align: right; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.stamp-adj-row input[type="range"] { width: 100%; accent-color: #ea1d2c; -webkit-appearance: auto; appearance: auto; background: none !important; padding: 0 !important; }
+
+/* ---------- Boutons dont le texte peut être long (Kanban : plusieurs personnes) ---------- */
+.btn.btn-wrap { white-space: normal; text-align: center; line-height: 1.35; height: auto; min-width: 0; border-radius: 14px; }
+.btn.btn-wrap span { overflow-wrap: anywhere; min-width: 0; }
+.btn.btn-wrap .svg-ico { flex-shrink: 0; }
+
+/* ---------- Finances : cartes de chiffres clés mieux mises en valeur ---------- */
+.fin-kpi { padding: 20px 22px; }
+.fin-kpi-title { font-size: 16px; font-weight: 800; color: var(--text-main); letter-spacing: 0.2px; }
+.fin-kpi-period { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+.fin-kpi-value { font-size: 26px; font-weight: 800; margin-top: 10px; }
+.fin-kpi-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+/* ---------- Impression en noir et blanc ---------- */
+@media print {
+  body.print-bw #a4Modal, body.print-bw #a4PrintContainer { filter: grayscale(100%) contrast(1.05); }
+}
+
+/* ---------- Pense-bête WhatsApp (reste visible pendant qu'on colle le PDF) ---------- */
+.wa-paste-helper { position: fixed; right: 22px; bottom: 22px; z-index: 9500; width: 330px; max-width: calc(100vw - 32px); padding: 14px 16px; border-radius: 14px; background: var(--bg-card); color: var(--text-main); border: 1.5px solid #25D366; box-shadow: 0 18px 44px rgba(0,0,0,0.45); font-size: 13px; }
+
+/* ---------- Bandeau de recherche (adapté à chaque onglet) ---------- */
+.tab-search-banner { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; padding: 10px 14px; border-radius: 12px; font-size: 13px; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.45); }
+
+/* =========================================================================
+   THÈME CLAIR — lisibilité
+   Beaucoup d'écrans ont des couleurs pensées pour un fond noir (texte jaune pâle, rose pâle,
+   cadres blancs transparents...). En thème clair, on les remplace par des teintes plus foncées.
+   Les zones qui restent sombres (barre latérale, récapitulatif de facture, cartes Gestions,
+   documents A4) ne sont pas concernées.
+   ========================================================================= */
+[data-theme="light"] .topbar { background: #ffffff; }
+
+/* Menu latéral clair, assorti au reste de l'application */
+[data-theme="light"] { --bg-sidebar: #ffffff; }
+[data-theme="light"] .sidebar { background: #ffffff; color: #0f172a; border-right: 1px solid #e2e8f0; box-shadow: 2px 0 12px rgba(15,23,42,0.04); }
+[data-theme="light"] .sidebar-header { border-bottom-color: #e2e8f0; }
+[data-theme="light"] .exact-logo-main, [data-theme="light"] .exact-logo-sub { color: #0f172a; }
+[data-theme="light"] .nav-item { color: #475569; border-bottom-color: #f1f5f9; }
+[data-theme="light"] .nav-item:hover { background: linear-gradient(90deg, rgba(234,29,44,0.10) 0%, rgba(234,29,44,0.02) 100%); color: #0f172a; }
+[data-theme="light"] .nav-item.active { background: linear-gradient(90deg, rgba(234,29,44,0.12) 0%, rgba(234,29,44,0.03) 100%); color: #b91c1c; font-weight: 700; }
+[data-theme="light"] .urgent-notif-box { background: #fef2f2; border-color: #fecaca; color: #0f172a; }
+[data-theme="light"] .urgent-notif-box.calm { background: #f8fafc; border-color: #e2e8f0; }
+[data-theme="light"] #sidebarNotifTitle { color: #0f172a !important; }
+[data-theme="light"] #sidebarNotifSub strong[style*="#fde047"] { color: #a16207 !important; }
+[data-theme="light"] .sidebar ::-webkit-scrollbar-thumb { background: rgba(100,116,139,0.3); }
+[data-theme="light"] .card-container { box-shadow: 0 1px 3px rgba(15,23,42,0.06); }
+[data-theme="light"] .modal-overlay { background: rgba(15,23,42,0.45); }
+[data-theme="light"] .modal-box { box-shadow: 0 25px 60px rgba(15,23,42,0.25); }
+[data-theme="light"] .pill-row:hover,
+[data-theme="light"] .equip-card:hover,
+[data-theme="light"] .equip-mini-card:hover,
+[data-theme="light"] .assignee-chip-option:hover { border-color: #94a3b8; }
+[data-theme="light"] .time-pill { background: #e2e8f0; color: #475569; }
+[data-theme="light"] .time-pill.active { background: #0f172a; color: #ffffff; }
+[data-theme="light"] .kanban-col { background: #e9eef5; }
+[data-theme="light"] .kanban-card { box-shadow: 0 4px 12px rgba(15,23,42,0.08); }
+[data-theme="light"] .devis-table th { background: #f1f5f9; }
+[data-theme="light"] .btn-new-line,
+[data-theme="light"] .inline-date-badge,
+[data-theme="light"] .cal-day-btn,
+[data-theme="light"] .equip-mini-thumb,
+[data-theme="light"] .client-logo-tpl-grid,
+[data-theme="light"] .size-slider-wrap { background: #f1f5f9; }
+[data-theme="light"] .proj-logo-slot:not(.has-img),
+[data-theme="light"] .kanban-logo-slot:not(.has-img) { background: #f8fafc; }
+[data-theme="light"] .pdf-card { background: #ffffff; }
+[data-theme="light"] .pdf-card:hover, [data-theme="light"] .pdf-card.selected { background: #f8fafc; box-shadow: 0 8px 24px rgba(15,23,42,0.12); }
+[data-theme="light"] .equip-photo-box { background: radial-gradient(circle at center, #ffffff 0%, #e2e8f0 100%); }
+[data-theme="light"] .context-dropdown-menu { box-shadow: 0 18px 40px rgba(15,23,42,0.18); }
+[data-theme="light"] .tab-search-banner { background: #dbeafe; border-color: #93c5fd; color: #1e3a8a; }
+[data-theme="light"] select option { background: #ffffff; color: #0f172a; }
+[data-theme="light"] input[type="file"]::file-selector-button { background: #e2e8f0; color: #0f172a; border-color: #cbd5e1; }
+
+/* Couleurs écrites directement dans les écrans (style="...") : versions foncées en thème clair */
+[data-theme="light"] :is(.main-view, .right-panel, .modal-box, #waSharePanel) :is([style*="color:#fca5a5"], [style*="color: #fca5a5"]):not(.quote-summary-panel *):not(.a4-modal-sheet *) { color: #b91c1c !important; }
+[data-theme="light"] :is(.main-view, .right-panel, .modal-box, #waSharePanel) :is([style*="color:#fde047"], [style*="color:#facc15"], [style*="color: #fde047"]):not(.quote-summary-panel *):not(.a4-modal-sheet *):not(.gestion-card *) { color: #a16207 !important; }
+[data-theme="light"] :is(.main-view, .right-panel, .modal-box, #waSharePanel) :is([style*="color:#2dd4bf"], [style*="color: #2dd4bf"]):not(.quote-summary-panel *):not(.a4-modal-sheet *) { color: #0f766e !important; }
+[data-theme="light"] :is(.main-view, .right-panel, .modal-box, #waSharePanel) :is([style*="color:#34d399"], [style*="color:#10b981"]):not(.quote-summary-panel *):not(.a4-modal-sheet *) { color: #047857 !important; }
+[data-theme="light"] :is(.main-view, .right-panel, .modal-box, #waSharePanel) :is([style*="color:#4ade80"], [style*="color:#22c55e"]):not(.quote-summary-panel *):not(.a4-modal-sheet *) { color: #15803d !important; }
+[data-theme="light"] :is(.main-view, .right-panel, .modal-box, #waSharePanel) :is([style*="color:#fbbf24"], [style*="color:#f59e0b"]):not(.quote-summary-panel *):not(.a4-modal-sheet *) { color: #b45309 !important; }
+[data-theme="light"] :is(.main-view, .right-panel, .modal-box, #waSharePanel) [style*="color:#f87171"]:not(.quote-summary-panel *):not(.a4-modal-sheet *) { color: #dc2626 !important; }
+[data-theme="light"] :is(.main-view, .right-panel, .modal-box, #waSharePanel) [style*="color:#93c5fd"]:not(.quote-summary-panel *):not(.a4-modal-sheet *) { color: #1d4ed8 !important; }
+[data-theme="light"] :is(.main-view, .right-panel, .modal-box, #waSharePanel) [style*="color:#9ca3af"]:not(.quote-summary-panel *):not(.a4-modal-sheet *) { color: #64748b !important; }
+/* Cadres « blanc transparent » invisibles sur fond blanc */
+[data-theme="light"] :is(.main-view, .right-panel, .modal-box) :is([style*="background:rgba(255,255,255,0.0"], [style*="background: rgba(255,255,255,0.0"], [style*="background:rgba(255,255,255,0.1"]):not(.quote-summary-panel *):not(.a4-modal-sheet *):not(.gestion-card *):not(.param-card *) { background-color: #f1f5f9 !important; }
+[data-theme="light"] :is(.main-view, .right-panel, .modal-box) [style*="solid rgba(255,255,255"]:not(.quote-summary-panel *):not(.a4-modal-sheet *):not(.gestion-card *):not(.param-card *) { border-color: #cbd5e1 !important; }
+
+/* ---------- TVA (ordinateur) ---------- */
+/* Éditeur de facture : « La société retient … % de la TVA » */
+body:not(.is-mobile) .tva-ret-row { white-space: normal; }
+body:not(.is-mobile) .tva-ret-row label { font-weight: 600; }
+body:not(.is-mobile) .tva-ret-row #tvaRetInfo { width: 0; min-width: 100%; line-height: 1.45; } /* suit la largeur du tableau sans l élargir */
+/* Rubrique « TVA » */
+.tva-info-banner { display: flex; gap: 12px; align-items: flex-start; padding: 14px 18px; margin-bottom: 20px; border-radius: 14px; border: 1px solid rgba(245,158,11,0.35); background: color-mix(in srgb, #f59e0b 8%, var(--bg-card)); font-size: 13px; line-height: 1.5; color: var(--text-muted); }
+.tva-info-banner b { color: var(--text-main); }
+.tva-info-banner .tva-info-icon { flex-shrink: 0; margin-top: 1px; color: #f59e0b; }
+.tva-kpi-clickable { cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
+.tva-kpi-clickable:hover { transform: translateY(-2px); }
+.tva-recap-row { cursor: pointer; }
+.tva-recap-row.on { border-color: #f59e0b !important; box-shadow: 0 0 0 1px #f59e0b inset; }
+.tva-recap-total { background: transparent !important; cursor: default; font-weight: 800; border-style: dashed !important; }
+.tva-list { display: flex; flex-direction: column; gap: 10px; }
+.tva-item { background: var(--bg-row); border: 1px solid var(--border); border-radius: 18px; padding: 14px 20px; }
+.tva-item.paid { opacity: 0.9; }
+.tva-item-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.tva-item-top .tva-actions { flex-direction: row; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.tva-item-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 18px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+.tva-lbl { font-size: 11.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
+.tva-val { font-size: 15px; font-weight: 800; }
+.tva-link { background: none; border: none; padding: 0; margin: 0; font: inherit; font-weight: 700; font-size: 13.5px; color: var(--text-main); cursor: pointer; text-align: left; }
+.tva-link:hover { color: var(--accent-btn); text-decoration: underline; }
+.tva-sub { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; line-height: 1.35; }
+.tva-ret-edit { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+.tva-ret-input { width: 64px; padding: 6px 8px; text-align: center; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-main); font-size: 13px; font-weight: 700; }
+.tva-ret-input:focus { outline: none; border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,0.25); }
+.tva-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; }
+.btn.btn-tva-pay { background: #f59e0b; color: #111827; padding: 8px 14px; font-size: 12.5px; }
+.btn.btn-tva-pay:hover { filter: brightness(1.08); }
+.btn.btn-tva-undo { padding: 7px 13px; font-size: 12px; }
+.tva-amount-due { color: #f59e0b; font-weight: 800; }
+.tva-amount-paid { color: #10b981; font-weight: 800; }
+.card-container.fin-tva-card { display: flex; justify-content: space-between; align-items: center; gap: 14px 24px; flex-wrap: wrap; border-left: 5px solid #f59e0b; background: color-mix(in srgb, #f59e0b 7%, var(--bg-card)); }
+.fin-tva-card > .fin-tva-text { flex: 1 1 360px; min-width: 0; }
+.fin-tva-card > .fin-tva-amount { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; flex: 0 0 auto; }
+.fin-tva-card .fin-kpi-sub { line-height: 1.45; }
+.fin-tva-card .fin-kpi-value { color: #f59e0b; margin-top: 0; }
+[data-theme="light"] .tva-amount-due, [data-theme="light"] .fin-tva-card .fin-kpi-value, [data-theme="light"] .tva-info-banner .tva-info-icon { color: #b45309; }
+[data-theme="light"] .tva-amount-paid { color: #047857; }
+
+/* Finances : montants cachés par défaut (bouton œil) */
+.fin-masked { letter-spacing: 3px; opacity: 0.8; }
+.fin-eye-btn { padding: 9px 16px; }
+.fin-chart-masked canvas { filter: blur(14px); opacity: 0.25; pointer-events: none; }
+.fin-chart-masked::after { content: "Montants cachés — cliquez sur « Afficher les montants »"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 88%; text-align: center; padding: 9px 16px; border-radius: 12px; background: var(--bg-card); border: 1px solid var(--border); font-size: 13px; font-weight: 700; color: var(--text-muted); pointer-events: none; }
+
+/* Champ « Autre année » (Finances et TVA) : même allure que les menus déroulants voisins */
+.other-year-wrap { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 8px 0 14px; border-radius: 22px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-muted); font-size: 12.5px; font-weight: 600; cursor: text; }
+.other-year-input { width: 74px; height: 32px; border: none; background: transparent; color: var(--text-main); font-size: 13px; font-weight: 700; outline: none; }
+.other-year-wrap:focus-within { border-color: var(--accent-btn); }
