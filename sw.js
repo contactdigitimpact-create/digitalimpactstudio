@@ -4,7 +4,7 @@
    - reçoit les notifications envoyées par le serveur (même téléphone verrouillé)
    Les données (Supabase) ne sont jamais mises en cache ici : elles restent toujours à jour.
    ========================================================================= */
-const CACHE = "digit-impact-v1.30.0";
+const CACHE = "digit-impact-v1.31.0";
 const APP_FILES = [
   "./", "./index.html", "./ui-polish.css", "./mobile.css", "./sb-sync.js", "./ui-polish.js", "./mobile.js",
   "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png",

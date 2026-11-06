@@ -330,7 +330,7 @@
       if (factFilter !== "ALL" && p.status !== factFilter) return false;
       if (!q) return true;
       return [p.name, client, formatDocNumber(p)].some(v => String(v || "").toLowerCase().includes(q));
-    }).sort((a, b) => String(parseAnyDateToYMD(b.p.date)).localeCompare(String(parseAnyDateToYMD(a.p.date))));
+    }).sort((a, b) => (typeof digitDocCmp === "function" ? digitDocCmp("mfact")(a.p, b.p) : String(parseAnyDateToYMD(b.p.date)).localeCompare(String(parseAnyDateToYMD(a.p.date)))));
   }
   function factListHTML() {
     const rows = invoiceRows();
@@ -362,7 +362,7 @@
       </div>
       <div class="m-sheet-card">
         <div class="m-grabber"></div>
-        <div class="m-sheet-head"><h2>Projets récents</h2><button type="button" class="m-filter-btn" id="mFactFilter">${filterLabel} ${I.sliders}</button></div>
+        <div class="m-sheet-head"><h2>Projets récents</h2><div class="m-sheet-tools">${typeof digitSortDocsHTML === "function" ? digitSortDocsHTML("mfact") : ""}<button type="button" class="m-filter-btn" id="mFactFilter">${filterLabel} ${I.sliders}</button></div></div>
         <div id="mFactList">${factListHTML()}</div>
       </div>`;
     $("mFolderClients").onclick = () => navigate("clients-folders");

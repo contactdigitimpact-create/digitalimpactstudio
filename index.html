@@ -945,6 +945,9 @@
     body:not(.is-mobile) :is(.folder-bottom-meta, .rcv-lbl, .res-day-chip span, .res-badge, .calm-ev, .calm-more, .abs-tag, .proj-logo-slot, .mlog-top .status-badge) { font-size: 11px !important; }
     body:not(.is-mobile) #mainView :is([style*="font-size:9"], [style*="font-size: 9"], [style*="font-size:10"], [style*="font-size: 10"]) { font-size: 11px !important; }
     .cal-mine-pills { margin:-4px 0 12px; }
+    .digit-sort { position:relative; display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 12px; border:1px solid var(--border); border-radius:999px; background:var(--bg-card); color:var(--text-muted); cursor:pointer; flex:0 0 auto; max-width:100%; }
+    .digit-sort select { appearance:none; -webkit-appearance:none; border:0; background:transparent; color:var(--text-main); font:inherit; font-size:13px; font-weight:600; padding:0 2px; cursor:pointer; outline:none; max-width:190px; text-overflow:ellipsis; }
+    .digit-sort:focus-within { border-color:var(--primary); }
     .my-week-days { display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; }
     .my-week-day { display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 0 7px; border-radius:10px; border:1px solid var(--border); background:var(--bg-row); color:var(--text-muted); cursor:pointer; font:inherit; }
     .my-week-day .mw-d { font-size:11px; }
@@ -4736,6 +4739,7 @@
                 Terminés en haut
               </span>
             </div>
+            ${digitSortHTML("prod", [["shoot", "Date de tournage"], ["delivery", "Date de livraison"], ["title", "Nom (A à Z)"], ["client", "Client (A à Z)"], ["recent", "Modifiés récemment"]], "shoot")}
           </div>
         ` : ''}
 
@@ -4770,7 +4774,13 @@
                   return aDone - bDone;
                 });
               }
-              return list;
+              // v1.31 : tri choisi, appliqué à l'intérieur du regroupement en cours / terminés
+              const done = p => (p.currentStageIndex >= p.stages.length - 1 ? 1 : 0);
+              const grp = prodSortMode === "DONE_FIRST" ? (a, b) => done(b) - done(a) : prodSortMode === "ACTIVE_FIRST" ? (a, b) => done(a) - done(b) : () => 0;
+              const ymd = v => (v ? parseAnyDateToYMD(v) : "") || "9999";
+              const S = { shoot: dsDate(p => ymd(p.shootDate), 1), delivery: dsDate(p => ymd(p.deliveryDate), 1), title: dsTxt(p => p.title), client: dsTxt(p => p.clientName), recent: dsNum(p => Number(p._updatedAt) || 0) };
+              const f = S[digitSortGet("prod", "shoot")] || S.shoot;
+              return list.slice().sort((a, b) => grp(a, b) || f(a, b));
             })().map(pp => {
               const stageName = pp.stages[pp.currentStageIndex] || "Validé";
               const assigneesArr = getStageAssigneesArray(pp, pp.currentStageIndex);
@@ -5542,6 +5552,7 @@
           <div class="card-header">
             <h2 class="card-title">Factures & Devis récents</h2>
             <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              ${digitSortDocsHTML("home")}
               <button class="btn btn-secondary" style="padding:8px 14px; font-size:12px;" onclick="openDocVerifyModal()" title="Vérifier qu'une facture reçue est authentique (QR code / code de vérification)">
                 ${svgIcon("shield", 14, "#10b981")} <span>Vérifier un document</span>
               </button>
@@ -5572,7 +5583,7 @@
             </div>
           ` : `
             <div class="pill-table-body">
-              ${combinedRecent.map(p => {
+              ${digitSortDocs("home", combinedRecent).map(p => {
                 const c = state.clients.find(x => x.id === p.clientId);
                 const isV = p.status === "VALIDATED";
                 const clientLabel = p._isFlash ? (p.flashClientName || 'Devis Flash') : (c ? c.name : 'Client');
@@ -5639,7 +5650,7 @@
       main.innerHTML = `
         <div class="page-header">
           <div class="back-nav" onclick="navigate('home')"><span>‹</span> ${svgIcon("bolt", 20, "#ea1d2c")} <span>Espace Devis Flash (Indépendant de Vos Clients)</span></div>
-          <button class="btn btn-primary" onclick="openFlashModal()">+ Nouveau Devis Flash</button>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">${visibleFlashQuotes().length > 1 ? digitSortDocsHTML("flash") : ""}<button class="btn btn-primary" onclick="openFlashModal()">+ Nouveau Devis Flash</button></div>
         </div>
         ${visibleFlashQuotes().length === 0 ? `
           <div style="height:58vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; color:var(--text-muted);">
@@ -5647,7 +5658,7 @@
           </div>
         ` : `
           <div class="folders-row" style="margin-top:16px;">
-            ${visibleFlashQuotes().map(f => {
+            ${digitSortDocs("flash", visibleFlashQuotes().map(f => ({ ...f, _isFlash: true }))).map(f => {
               const menuId = `flashFolderMenu_${f.id}`;
               return `
                 <div class="folder-3d-item" onclick="openAnyProject('${f.id}', true)">
@@ -5719,7 +5730,7 @@
       main.innerHTML = `
         <div class="page-header">
           <div class="back-nav" onclick="navigate('home')"><span>‹</span> <span>Vos Clients (${state.clients.length})</span></div>
-          <button class="btn btn-gold" onclick="navigate('add-client')">+ Ajouter une entreprise</button>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">${state.clients.length > 1 ? digitSortHTML("clients", [["name_asc", "Nom (A à Z)"], ["name_desc", "Nom (Z à A)"], ["recent", "Plus récents"], ["docs", "Plus de documents"], ["amount", "Montant facturé"]], "name_asc") : ""}<button class="btn btn-gold" onclick="navigate('add-client')">+ Ajouter une entreprise</button></div>
         </div>
         ${state.clients.length === 0 ? `
           <div style="height:58vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; color:var(--text-muted);">
@@ -5727,7 +5738,12 @@
           </div>
         ` : `
           <div class="folders-row" style="margin-top:18px;">
-            ${state.clients.map(c => {
+            ${digitSortList("clients", state.clients, {
+              name_asc: dsTxt(c => c.name), name_desc: dsTxt(c => c.name, -1),
+              recent: dsNum(c => Number(c._updatedAt) || Number(String(c.id).replace(/\D/g, "").slice(0, 13)) || 0),
+              docs: dsNum(c => visibleProjects().filter(p => p.clientId === c.id).length),
+              amount: dsNum(c => visibleProjects().filter(p => p.clientId === c.id && p.status === "VALIDATED").reduce((t, p) => t + calcProjectTotals(p).ttc, 0))
+            }, "name_asc").map(c => {
               const count = visibleProjects().filter(p => p.clientId === c.id).length;
               return `
                 <div class="folder-3d-item" onclick="navigate('client-detail', { clientId: '${c.id}' })">
@@ -5864,7 +5880,7 @@
       main.innerHTML = `
         <div class="page-header">
           <div class="back-nav" onclick="navigate('clients-folders')"><span>‹</span> <span>Clients — ${client.name}</span></div>
-          <button class="btn btn-gold" onclick="openProjectModal()">+ Ajouter un projet</button>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">${cProjects.length > 1 ? digitSortDocsHTML("client") : ""}<button class="btn btn-gold" onclick="openProjectModal()">+ Ajouter un projet</button></div>
         </div>
         ${cProjects.length === 0 ? `
           <div style="height:58vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; color:var(--text-muted);">
@@ -5872,7 +5888,7 @@
           </div>
         ` : `
           <div class="folders-row" style="margin-top:16px;">
-            ${cProjects.map(p => {
+            ${digitSortDocs("client", cProjects).map(p => {
               const menuId = `clientProjMenu_${p.id}`;
               return `
                 <div class="folder-3d-item" onclick="openAnyProject('${p.id}', false)">
@@ -7171,8 +7187,12 @@
             Aucun appareil dans cet état. <button class="btn btn-secondary" style="margin-left:10px; padding:6px 12px;" onclick="equipConditionFilter='ALL'; renderEquipmentInventory(document.getElementById('mainView'))">Afficher tout le parc</button>
           </div>
         ` : `
+          ${filteredEquips.length > 1 ? `<div style="display:flex; justify-content:flex-end; margin:0 0 10px;">${digitSortHTML("equip", [["name", "Nom (A à Z)"], ["cat", "Catégorie"], ["avail", "Plus disponibles"], ["out", "Plus sortis"]], "name")}</div>` : ""}
           <div class="equip-grid" id="inventoryEquipGrid" style="grid-template-columns: repeat(auto-fill, minmax(${inventoryCardSize}px, 1fr));">
-            ${filteredEquips.map(eq => {
+            ${digitSortList("equip", filteredEquips, {
+              name: dsTxt(e => e.name), cat: (a, b) => dsTxt(e => e.category)(a, b) || dsTxt(e => e.name)(a, b),
+              avail: dsNum(e => (Number(e.totalQty) || 1) - (Number(e.outQty) || 0)), out: dsNum(e => e.outQty)
+            }, "name").map(eq => {
               const tot = Number(eq.totalQty) || 1;
               const out = Number(eq.outQty) || 0;
               const avail = Math.max(0, tot - out);
@@ -7584,10 +7604,13 @@
 
         <!-- 2. Fiches de Sortie & Confirmation des Retours (Avec Photos & Couleur d'état) -->
         <div class="card-container">
-          <h2 class="card-title" style="margin-bottom:16px;">2. Fiches de Sortie & Confirmation des Retours</h2>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px;"><h2 class="card-title" style="margin:0;">2. Fiches de Sortie & Confirmation des Retours</h2>${state.equipmentLogs.length > 1 ? digitSortHTML("logs", [["recent", "Plus récentes"], ["old", "Plus anciennes"], ["open", "Non rendues d'abord"], ["who", "Personne (A à Z)"]], "open") : ""}</div>
           ${state.equipmentLogs.length === 0 ? `<div style="padding:30px; text-align:center; color:var(--text-muted);">Aucune sortie enregistrée.</div>` : `
             <div class="pill-table-body">
-              ${state.equipmentLogs.map(log => {
+              ${digitSortList("logs", state.equipmentLogs, {
+                recent: dsNum(l => Number(String(l.id).replace(/\D/g, "").slice(0, 13)) || 0), old: dsNum(l => Number(String(l.id).replace(/\D/g, "").slice(0, 13)) || 0, 1),
+                open: (a, b) => (a.status === "RETURNED" ? 1 : 0) - (b.status === "RETURNED" ? 1 : 0), who: dsTxt(l => l.employeeName || l.accountName)
+              }, "open").map(log => {
                 const st = log.status;
                 return `
                   <div class="pill-row" style="grid-template-columns: 0.9fr 1.1fr 2.4fr 1fr 1.9fr;">
@@ -9457,13 +9480,17 @@ ${lines}`;
           </div>
         </div>
         <div class="card-container" style="min-height:300px;">
-          <h3 style="font-size:16px; margin-bottom:14px;">Historique des dépenses (${filteredExpenses.length})</h3>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;"><h3 style="font-size:16px; margin:0;">Historique des dépenses (${filteredExpenses.length})</h3>${filteredExpenses.length > 1 ? digitSortHTML("exp", [["date_desc", "Plus récentes"], ["date_asc", "Plus anciennes"], ["amount_desc", "Montant (plus élevé)"], ["amount_asc", "Montant (plus faible)"], ["name", "Nom (A à Z)"], ["cat", "Catégorie"], ["pending", "À valider d'abord"]], "date_desc") : ""}</div>
           <div class="pill-table-header" style="grid-template-columns: ${gridCols};">
             <div>Date</div><div>Nom de la dépense</div><div>Catégorie</div>${showAuthor ? '<div>Saisie par</div>' : ''}<div>Montant</div><div>Statut</div><div style="text-align:right;">Actions</div>
           </div>
           ${filteredExpenses.length === 0 ? `<div style="padding:45px 20px; text-align:center; color:var(--text-muted); font-size:13px;">Aucune dépense sur cette période</div>` : `
             <div class="pill-table-body">
-              ${filteredExpenses.map(e => `
+              ${digitSortList("exp", filteredExpenses, {
+                date_desc: dsDate(e => parseAnyDateToYMD(e.date)), date_asc: dsDate(e => parseAnyDateToYMD(e.date), 1),
+                amount_desc: dsNum(e => e.amount), amount_asc: dsNum(e => e.amount, 1), name: dsTxt(e => e.name), cat: dsTxt(e => e.category),
+                pending: (a, b) => (a.approval === "PENDING" ? 0 : 1) - (b.approval === "PENDING" ? 0 : 1) || dsDate(e => parseAnyDateToYMD(e.date))(a, b)
+              }, "date_desc").map(e => `
                 <div class="pill-row" style="grid-template-columns: ${gridCols};${isExpenseApproved(e) ? '' : ' opacity:0.75;'}">
                   <div style="color:var(--text-muted);">${formatYMDToFRDisplay(e.date)}</div>
                   <div style="font-weight:600;">${e.name}${(() => { const li = e.linkedInvoiceId ? findInvoice(e.linkedInvoiceId, e.linkedIsFlash) : null; return li && canSeeInvoice(li) ? `<div class="pay-item-sub" style="font-weight:500;">${svgIcon("link", 11)} ${dEsc(formatDocNumber(li))} — ${dEsc(li.name || "")}</div>` : ""; })()}${e.maintenanceLogId ? `<div class="pay-item-sub" style="font-weight:500;">${svgIcon("wrench", 11)} Carnet d'entretien</div>` : ""}</div>
@@ -14108,6 +14135,33 @@ ${lines}`;
       if (changed) { saveState({ debounceCloud: true }); try { updateBadgesAndNotificationsUI(); } catch (e) {} }
       try { if (typeof maybeAutoBackup === "function") maybeAutoBackup(); } catch (e) {}
     }
+    /* ===== V1.31 : bouton « Trier » commun à toutes les longues listes (choix mémorisé sur l'appareil) ===== */
+    const DIGIT_SORT_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16"/><path d="M3.5 7.5 7 4l3.5 3.5"/><path d="M17 20V4"/><path d="M13.5 16.5 17 20l3.5-3.5"/></svg>';
+    function digitSortGet(k, def) { try { return localStorage.getItem("digitSort_" + k) || def; } catch (e) { return def; } }
+    function digitSortSet(k, v) {
+      try { localStorage.setItem("digitSort_" + k, v); } catch (e) {}
+      if (String(currentView).startsWith("m-")) navigate(currentView); else rerenderCurrentView();
+    }
+    function digitSortHTML(k, opts, def) {
+      const cur = digitSortGet(k, def);
+      return `<label class="digit-sort" title="Trier la liste">${DIGIT_SORT_ICON}<select aria-label="Trier la liste" onchange="digitSortSet('${k}', this.value)">${opts.map(([v, l]) => `<option value="${v}" ${v === cur ? "selected" : ""}>${l}</option>`).join("")}</select></label>`;
+    }
+    function digitSortList(k, list, defs, def) { const f = defs[digitSortGet(k, def)] || defs[def]; return f ? list.slice().sort(f) : list; }
+    const dsTxt = (g, dir = 1) => (a, b) => dir * String(g(a) || "").localeCompare(String(g(b) || ""), "fr", { sensitivity: "base" });
+    const dsNum = (g, dir = -1) => (a, b) => dir * ((Number(g(a)) || 0) - (Number(g(b)) || 0));
+    const dsDate = (g, dir = -1) => (a, b) => dir * String(g(a) || "").localeCompare(String(g(b) || ""));
+    // Factures, proformas et devis flash
+    const docClientName = p => p._isFlash || p.isFlash ? (p.flashClientName || "Devis Flash") : ((state.clients || []).find(c => c.id === p.clientId) || {}).name || "";
+    const DOC_SORT_OPTS = [["date_desc", "Plus récentes"], ["date_asc", "Plus anciennes"], ["num_desc", "Numéro"], ["amount_desc", "Montant"], ["client", "Client (A à Z)"], ["status", "À valider d'abord"]];
+    const DOC_SORTS = {
+      date_desc: dsDate(p => parseAnyDateToYMD(p.date)), date_asc: dsDate(p => parseAnyDateToYMD(p.date), 1),
+      num_desc: dsNum(p => p.invoiceNumber), amount_desc: dsNum(p => calcProjectTotals(p).ttc), client: dsTxt(docClientName),
+      status: (a, b) => (a.status === "VALIDATED" ? 1 : 0) - (b.status === "VALIDATED" ? 1 : 0) || dsDate(p => parseAnyDateToYMD(p.date))(a, b)
+    };
+    window.digitSortDocs = (k, list) => digitSortList(k, list, DOC_SORTS, "date_desc");
+    window.digitSortDocsHTML = k => digitSortHTML(k, DOC_SORT_OPTS, "date_desc");
+    window.digitDocCmp = k => DOC_SORTS[digitSortGet(k, "date_desc")] || DOC_SORTS.date_desc;
+
     /* ===== V1.29 : retour vers la page d'origine, agenda « Pour moi », bande « Ma semaine », rappel de tournage ===== */
     const DIGIT_HUBS = ["dashboard", "ai-activity", "prod-calendar", "prod-projects", "kanban", "finances", "tva", "m-tva", "m-balance", "expenses", "param-ia", "param-journal", "absences", "equip-reservations"];
     const DIGIT_DETAILS = ["proforma-view", "quote-editor", "client-detail", "project-empty", "flash-space"];

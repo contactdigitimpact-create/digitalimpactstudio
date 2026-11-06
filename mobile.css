@@ -453,3 +453,8 @@ body.is-mobile :is(.time-pill, .m-filter-btn) { min-height: 36px; display: inlin
 body.is-mobile #mainView button[title][style*="background:none"], body.is-mobile .pay-del, body.is-mobile .m-eye { min-width: 40px; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; }
 body.is-mobile #mainView .btn[title]:not(:has(span:not(.svg-ico))) { min-width: 40px; min-height: 40px; }
 body.is-mobile .back-nav { min-height: 40px; }
+
+/* v1.31 : bouton « Trier » sur téléphone */
+.m-sheet-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+body.is-mobile .digit-sort { height: 36px; padding: 0 10px; }
+body.is-mobile .digit-sort select { font-size: 16px; max-width: 150px; }
