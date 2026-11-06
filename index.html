@@ -941,6 +941,8 @@
     .ai-report svg { flex:0 0 auto; margin-top:2px; }
     .ai-report b { color:var(--text-main); font-weight:600; }
     .ai-report.off { opacity:.6; }
+    .ai-dash { margin-top:16px; }
+    .ai-dash .card-title { display:flex; align-items:center; gap:8px; }
     @media (max-width:480px) { .ai-row { flex-direction:column; } }
     .ce-allday { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-main); margin:2px 0 14px; cursor:pointer; }
     .ce-allday input { width:16px; height:16px; accent-color:var(--primary); }
@@ -12746,6 +12748,7 @@ ${lines}`;
             <div class="m-sheet-head"><h2>À traiter</h2></div>
             ${rows.length ? rows.map(rowHTML).join("") : `<div class="m-empty">Rien d'urgent pour le moment.</div>`}
           </div>
+          ${aiDashCardHTML(3)}
           ${dueHTML}`;
         return;
       }
@@ -12763,6 +12766,7 @@ ${lines}`;
             <h3 class="card-title" style="margin-bottom:10px;">${c.title}</h3>
             <div class="dash-rows">${c.rows.map(rowHTML).join("")}</div>
           </div>`).join("")}</div>
+        ${aiDashCardHTML(5)}
         ${dueHTML}`;
     }
 
@@ -14402,6 +14406,20 @@ ${lines}`;
         </div>`;
     }
     function aiSetMax(v) { const id = aiTargetId(), c = aiCfg(id), n = Math.round(Number(v)); if (!(n >= 1000)) return showToast("Plafond invalide.", true); c.maxAmount = n; aiSave(id, c, `Connecteur IA : plafond par action ${formatFCFA(n)} FCFA`); }
+    // v1.27 : carte « Ce que l'IA a fait » sur le tableau de bord (Administrateur et Directeur général), avec annulation rapide
+    function aiDashCardHTML(max) {
+      if (typeof canManageAiConnector !== "function" || !canManageAiConnector()) return "";
+      const ids = aiManageableAccounts().map(a => a.id), me = (getCurrentAccount() || {}).id;
+      const logs = (state.auditLog || []).filter(a => a && a.via === "IA" && ids.includes(a.accountId)).sort((x, y) => Number(y.at) - Number(x.at)).slice(0, max);
+      if (!logs.length) return "";
+      const who = id => { const a = (state.accounts || []).find(x => x.id === id); return id === me || !a ? "" : ` <span class="dis-muted">(${dEsc(String(a.name || "").split(/\s+/)[0])})</span>`; };
+      return `<div class="card-container ai-dash">
+          <div class="card-header"><h3 class="card-title">${svgIcon("link", 16, "var(--c-blue)")} <span>Ce que l'IA a fait</span></h3>
+            <button type="button" class="btn btn-secondary" style="padding:6px 12px; font-size:12px;" onclick="navigate('param-ia')">Tout voir</button></div>
+          ${logs.map(l => { const done = aiUndoDone(l.id), can = l.undo && !done && Date.now() - Number(l.at) < 7 * 864e5;
+            return `<div class="ai-log"><div style="flex:1; min-width:0;"><span class="dis-muted">${new Date(Number(l.at)).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}</span> · ${dEsc(String(l.label || "").replace(/ via IA : .*$/, ""))}${who(l.accountId)}${done ? ` <span class="status-badge neutral">annulée</span>` : ""}</div>${can ? `<button type="button" class="btn btn-secondary" style="padding:5px 10px; font-size:12px;" onclick="aiUndo('${dEsc(l.id)}')">Annuler</button>` : ""}</div>`; }).join("")}
+        </div>`;
+    }
     function aiUndoDone(logId) { return (state.auditLog || []).some(a => a && a.action === "AI_UNDO" && a.objectId === logId); }
     // Annule une action de l'IA (7 jours) : un ajout est retiré, une modification revient à la version d'avant
     async function aiUndo(logId) {
