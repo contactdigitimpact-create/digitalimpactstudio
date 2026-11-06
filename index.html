@@ -14393,7 +14393,7 @@ ${lines}`;
         <div class="card-container">
           <div class="card-header"><h3 class="card-title">Codes secrets</h3><button type="button" class="btn btn-gold" onclick="aiCreateCode()">${svgIcon("plus", 15)} <span>Créer un code</span></button></div>
           <p class="dis-muted" style="font-size:12.5px; margin:0 0 12px;">Un code par IA. Révoquer un code coupe seulement cette IA.</p>
-          ${c.codes.length ? `<div class="calm-day-list">${c.codes.map(k => `<div class="ai-code ${k.active === false ? "off" : ""}">${svgIcon("key", 16)}<div style="flex:1; min-width:0;"><b>${dEsc(k.name)}</b><div class="pay-item-sub">Créé le ${dFr(String(k.createdAt || "").slice(0, 10))}${k.active === false ? " · révoqué" : ""}</div></div>${k.active === false ? "" : `<button type="button" class="btn btn-secondary" style="padding:6px 12px; font-size:12px;" onclick="aiRevokeCode('${dEsc(k.id)}')">Révoquer</button>`}</div>`).join("")}</div>` : `<div class="dis-empty">Aucun code pour l'instant.</div>`}
+          ${c.codes.length ? `<div class="calm-day-list">${c.codes.map(k => `<div class="ai-code ${k.active === false ? "off" : ""}">${svgIcon("key", 16)}<div style="flex:1; min-width:0;"><b>${dEsc(k.name)}</b><div class="pay-item-sub">Créé le ${dFr(String(k.createdAt || "").slice(0, 10))}${k.active === false ? " · révoqué" : ""}</div></div>${k.active === false ? `<button type="button" class="btn btn-secondary" style="padding:6px 12px; font-size:12px;" onclick="aiDeleteCode('${dEsc(k.id)}')">Supprimer</button>` : `<button type="button" class="btn btn-secondary" style="padding:6px 12px; font-size:12px;" onclick="aiRevokeCode('${dEsc(k.id)}')">Révoquer</button>`}</div>`).join("")}</div>` : `<div class="dis-empty">Aucun code pour l'instant.</div>`}
         </div>
         <div class="card-container">
           <h3 class="card-title" style="margin-bottom:12px;">Ce que les IA ont fait</h3>
@@ -14455,6 +14455,14 @@ ${lines}`;
       if (!k || !(await digitConfirm("Révoquer ce code ?", `L'IA « ${k.name} » ne pourra plus accéder au logiciel.`, { yes: "Révoquer", danger: true }))) return;
       k.active = false; k.revokedAt = new Date().toISOString();
       aiSave(id, c, `Connecteur IA : code révoqué pour ${k.name}`);
+    }
+    // v1.26 : un code déjà révoqué peut être retiré de la liste (un code actif doit d'abord être révoqué)
+    async function aiDeleteCode(codeId) {
+      const id = aiTargetId(), c = aiCfg(id), k = c.codes.find(x => x.id === codeId);
+      if (!k || k.active !== false) return;
+      if (!(await digitConfirm("Supprimer ce code ?", `Le code révoqué de « ${k.name} » sera retiré de la liste. L'historique des actions reste visible.`, { yes: "Supprimer", danger: true }))) return;
+      c.codes = c.codes.filter(x => x.id !== codeId);
+      aiSave(id, c, `Connecteur IA : code supprimé pour ${k.name}`);
     }
     /* ===== V1.21 — FIN ===== */
 
