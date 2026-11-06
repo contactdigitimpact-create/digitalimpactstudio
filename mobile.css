@@ -23,6 +23,9 @@ body.is-mobile .right-panel { width: 100%; padding: 14px 12px 22px; border-left:
 /* Taille adaptée au téléphone : tous les écrans (pensés pour ordinateur) sont réduits d'environ 15 % */
 body.is-mobile .main-view, body.is-mobile .right-panel, body.is-mobile .modal-box, body.is-mobile .stamp-adj-card { zoom: 0.86; }
 body.is-mobile .auth-card { zoom: 0.86; padding: 26px 20px; }
+/* 1.32 : dans ces écrans réduits à 86 %, un champ à 16 px s'affiche à 13,8 px et l'iPhone zoome tout seul à la connexion (la page reste ensuite agrandie et déborde). 18,7 px x 0,86 = 16 px affichés : plus de zoom. */
+body.is-mobile :is(.main-view, .right-panel, .modal-box, .stamp-adj-card, .auth-card) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) { font-size: 18.7px !important; }
+body.is-mobile :is(.main-view, .right-panel, .modal-box, .stamp-adj-card, .auth-card) :is(input, textarea)::placeholder { font-size: 16px; } /* texte d'aide gris : même taille qu'avant */
 
 /* ---------- En-tête fixe ---------- */
 .m-header { display: none; }
