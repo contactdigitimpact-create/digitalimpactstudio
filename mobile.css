@@ -426,3 +426,30 @@ body.is-mobile .calm-head, body.is-mobile .calm-grid { gap: 3px; }
 body.is-mobile .calm-num { width: 22px; height: 22px; font-size: 12.5px; }
 body.is-mobile .calm-legend { font-size: 11px; gap: 4px 10px; margin-bottom: 8px; }
 body.is-mobile .calm-legend i { width: 8px; height: 8px; }
+
+/* v1.28 : nombre d'actions de l'IA du jour sur l'onglet « IA » */
+.m-seg-dot { min-width:17px; height:17px; padding:0 5px; border-radius:999px; background:var(--c-blue, #3b82f6); color:#fff; font-size:10.5px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; line-height:1; }
+
+/* ===== v1.30 : lisibilité sur téléphone (WCAG 2.2, Apple et Material) =====
+   - aucun texte courant sous 12 px (les pastilles de compteur restent à 11 px minimum) ;
+   - champs de saisie à 16 px (évite le zoom automatique de l'iPhone) ;
+   - zones à toucher d'au moins 36 px (filtres, pastilles) et 40 px (boutons d'icône), cases à cocher de 20 px. */
+body.is-mobile { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body.is-mobile :is(.fin-kpi-period, .tva-lbl, .tva-sub, .urgent-notif-box, .folder-bottom-meta, .status-badge, .size-slider-wrap, .cond-badge,
+  .assignee-chip-option, .assignee-badge-mini, .inline-date-badge, .cal-grid-header, .pay-note, .pay-item-sub, .pay-empty, .pay-sub-title,
+  .rcv-client span, .rcv-due span, .rcv-lbl, .dash-kpi-grid-phone .fin-kpi-sub, .stat-line span, .stat-sub, .cn-kind-opt small, .res-day-head,
+  .res-day-chip, .res-day-chip span, .res-dates, .res-chip, .res-badge, .mlog-top .status-badge, .aud-when span, .aud-who span, .aud-what small,
+  .abs-tag, .calm-head div, .calm-kind, .my-week-day .mw-d, .ai-act-sub, .dcal-caption, .dcal-dow span, .m-tiles-small .m-tile, .m-sheet-sub,
+  .m-tva-note, .m-tva-row .s, .m-tva-item .s, .m-tva-chip, .m-tva-recap-grid, .m-tva-recap-head, .calm-legend, .calm-legend span, .m-avatar-btn,
+  .pay-late, .emp-avatar-circle, .dis-muted, .aiact-meta, .aiact-new) { font-size: 12px !important; }
+/* Tailles écrites directement dans les écrans (9 à 11,9 px) */
+body.is-mobile #mainView :is([style*="font-size:9"], [style*="font-size: 9"], [style*="font-size:10"], [style*="font-size: 10"], [style*="font-size:11"], [style*="font-size: 11"]) { font-size: 12px !important; }
+body.is-mobile :is(.nav-badge-alert, .bell-dot, .m-icon-btn .m-badge, .m-tab .m-badge, .m-seg-dot, .ai-nav-count) { font-size: 11px !important; }
+/* Champs */
+body.is-mobile :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) { font-size: 16px !important; }
+body.is-mobile input:is([type="checkbox"], [type="radio"]) { width: 20px; height: 20px; flex: 0 0 auto; }
+/* Zones à toucher */
+body.is-mobile :is(.time-pill, .m-filter-btn) { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; }
+body.is-mobile #mainView button[title][style*="background:none"], body.is-mobile .pay-del, body.is-mobile .m-eye { min-width: 40px; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; }
+body.is-mobile #mainView .btn[title]:not(:has(span:not(.svg-ico))) { min-width: 40px; min-height: 40px; }
+body.is-mobile .back-nav { min-height: 40px; }

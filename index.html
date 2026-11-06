@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https://pydirhnchnvcxmyeeamj.supabase.co wss://pydirhnchnvcxmyeeamj.supabase.co; object-src 'none'; base-uri 'self'; frame-src 'none'; form-action 'self'" />
   <link rel="stylesheet" href="ui-polish.css" />
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Digit Impact Studio — Gestion & Production</title>
   <!-- Application installable sur téléphone (écran d'accueil iPhone / Android) -->
   <link rel="manifest" href="manifest.webmanifest" />
@@ -941,8 +941,43 @@
     .ai-report svg { flex:0 0 auto; margin-top:2px; }
     .ai-report b { color:var(--text-main); font-weight:600; }
     .ai-report.off { opacity:.6; }
-    .ai-dash { margin-top:16px; }
-    .ai-dash .card-title { display:flex; align-items:center; gap:8px; }
+    /* v1.30 : lisibilité sur Mac et Windows (minimum 11 px, recommandation Apple pour macOS) */
+    body:not(.is-mobile) :is(.folder-bottom-meta, .rcv-lbl, .res-day-chip span, .res-badge, .calm-ev, .calm-more, .abs-tag, .proj-logo-slot, .mlog-top .status-badge) { font-size: 11px !important; }
+    body:not(.is-mobile) #mainView :is([style*="font-size:9"], [style*="font-size: 9"], [style*="font-size:10"], [style*="font-size: 10"]) { font-size: 11px !important; }
+    .cal-mine-pills { margin:-4px 0 12px; }
+    .my-week-days { display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; }
+    .my-week-day { display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 0 7px; border-radius:10px; border:1px solid var(--border); background:var(--bg-row); color:var(--text-muted); cursor:pointer; font:inherit; }
+    .my-week-day .mw-d { font-size:11px; }
+    .my-week-day .mw-n { font-size:15px; font-weight:700; color:var(--text-main); }
+    .my-week-day.today { border-color:var(--primary); }
+    .my-week-day .calm-dots { min-height:6px; }
+    .my-week .card-header { flex-wrap:wrap; gap:6px; }
+    .ai-report > div > div + div { margin-top:4px; }
+    .ai-report-set { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .ai-report-set select { padding:4px 26px 4px 10px; font-size:12.5px; }
+    .ai-dash { border-left:3px solid var(--primary); }
+    .ai-dash-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+    .ai-dash-title { display:flex; align-items:center; gap:10px; min-width:0; }
+    .ai-dash-title h3 { margin:0; font-size:16px; font-weight:700; color:var(--text-main); }
+    .ai-dash-badge { width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:rgba(234,29,44,.12); color:var(--primary); flex:0 0 auto; }
+    .ai-act-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--border); }
+    .ai-act-row.done { opacity:.55; }
+    .ai-act-ico { width:30px; height:30px; border-radius:9px; background:var(--bg-row); display:flex; align-items:center; justify-content:center; color:var(--text-muted); flex:0 0 auto; }
+    .ai-act-main { flex:1; min-width:0; }
+    .ai-act-main.click { cursor:pointer; }
+    .ai-act-label { font-size:13px; font-weight:600; color:var(--text-main); line-height:1.35; overflow-wrap:anywhere; }
+    .ai-act-sub { font-size:11.5px; color:var(--text-muted); margin-top:2px; line-height:1.4; }
+    .ai-act-btns { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; flex:0 0 auto; }
+    .ai-act-btns .btn { padding:6px 10px; font-size:12px; }
+    .ai-act-go { color:var(--text-muted); display:flex; }
+    .ai-filters { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:12px; }
+    .ai-chip { border:1px solid var(--border); background:var(--bg-card); color:var(--text-main); border-radius:999px; padding:7px 12px; font-size:12.5px; white-space:nowrap; cursor:pointer; }
+    .ai-chip span { color:var(--text-muted); margin-left:4px; }
+    .ai-chip.on { background:var(--primary); border-color:var(--primary); color:#fff; }
+    .ai-chip.on span { color:rgba(255,255,255,.8); }
+    .ai-nav-count { margin-left:auto; background:var(--primary); color:#fff; font-size:11px; border-radius:999px; padding:1px 7px; }
+    .ai-nav-count:empty { display:none; }
+    @media (max-width: 480px) { .ai-act-row { flex-wrap:wrap; } .ai-act-btns { width:100%; justify-content:flex-start; padding-left:40px; } .ai-act-btns:empty { display:none; } .ai-act-row .ai-act-btns:has(.ai-act-go) { width:auto; padding-left:0; } }
     @media (max-width:480px) { .ai-row { flex-direction:column; } }
     .ce-allday { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-main); margin:2px 0 14px; cursor:pointer; }
     .ce-allday input { width:16px; height:16px; accent-color:var(--primary); }
@@ -1048,6 +1083,10 @@
         <li class="nav-item" id="navDashboard" data-nav="dashboard" onclick="navigate('dashboard')" style="display:none;">
           <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></span>
           <span class="nav-label">Tableau de bord</span>
+        </li>
+        <li class="nav-item" id="navAiActivity" data-nav="ai-activity" onclick="navigate('ai-activity')" style="display:none;">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+          <span class="nav-label">Activité IA</span><span class="ai-nav-count" id="aiNavCount"></span>
         </li>
         <li class="nav-item active" id="navProdProjects" data-nav="prod-projects" onclick="navigate('prod-projects')">
           <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg></span>
@@ -2969,6 +3008,7 @@
       else if (currentView === "absences" && typeof renderAbsencesView === "function") renderAbsencesView(main);
       else if (currentView === "param-journal" && typeof renderAuditJournalView === "function") renderAuditJournalView(main);
       else if (currentView === "param-ia" && typeof renderAiConnectorView === "function") renderAiConnectorView(main);
+      else if (currentView === "ai-activity" && typeof renderAiActivityView === "function") renderAiActivityView(main);
     }
 
     function finishBoot() {
@@ -3448,6 +3488,8 @@
       const isCompta = role === "COMPTABLE";
       const show = (id, visible) => { const el = document.getElementById(id); if (el) el.style.display = visible ? "flex" : "none"; };
       show("navDashboard", role === "ADMIN" || role === "PDG" || isCompta);
+      show("navAiActivity", role === "ADMIN" || role === "PDG");
+      try { const n = aiTodayCount(); const b = document.getElementById("aiNavCount"); if (b) b.textContent = n ? String(n) : ""; } catch (e) {}
       show("navProdProjects", !isCompta);
       show("navKanban", !isCompta);
       show("navEquipCheckout", !isCompta);
@@ -3493,7 +3535,7 @@
       // v1.19 — Tableau de bord : PDG et Comptable ; Journal : PDG (lecture) ; Calendrier et absences : tout le monde (contenu filtré)
       if (view === "dashboard") return role === "PDG" || role === "COMPTABLE";
       if (view === "param-journal") return role === "PDG";
-      if (view === "param-ia") return role === "PDG";
+      if (view === "param-ia" || view === "ai-activity") return role === "PDG";
       if (view === "prod-calendar" || view === "absences") return true;
       const financeViews = ["finances", "tva", "expenses", "management", "gestion-sub"];
       if (role === "COMPTABLE") {
@@ -4585,6 +4627,8 @@
       if (view === "finances") { if (params.finTab) finTab = params.finTab; else if (currentView !== "finances" && currentView !== "proforma-view") finTab = "overview"; }
       if (view === "dashboard" && currentView !== "dashboard") dashAmountsHidden = true;
       if (view === "tva" && currentView !== "tva") tvaAmountsHidden = true;
+      // v1.29 : on retient la page d'où l'on vient quand on ouvre une fiche (facture, client...) depuis une page de synthèse
+      try { digitTrackOrigin(currentView, view, params); } catch (e) {}
       currentView = view;
       if (params.clientId !== undefined) selectedClientId = params.clientId;
       if (params.projectId !== undefined) selectedProjectId = params.projectId;
@@ -4632,6 +4676,7 @@
       else if (view === "absences") renderAbsencesView(main);
       else if (view === "param-journal") renderAuditJournalView(main);
       else if (view === "param-ia") renderAiConnectorView(main);
+      else if (view === "ai-activity") renderAiActivityView(main);
     }
     // Rubrique du menu de gauche à mettre en surbrillance pour une page
     function navKeyForView(view, role) {
@@ -4640,6 +4685,7 @@
       if (view === "absences") return "management";
       if (view === "param-journal") return role === "ADMIN" ? "param-db" : "management";
       if (view === "param-ia") return "management";
+      if (view === "ai-activity") return "ai-activity";
       return view;
     }
 
@@ -4672,6 +4718,7 @@
           </div>
         </div>
         ${prodTabsBarHTML("prod-projects")}
+        ${myWeekHTML()}
 
         ${state.prodProjects.length > 0 ? `
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
@@ -12742,13 +12789,13 @@ ${lines}`;
             <div><div class="dash-hello">Bonjour ${dEsc(firstName)}</div><div class="dash-date">${dLongDate(dToday())}</div></div>
             ${eye}
           </div>
+          ${aiDashCardHTML(3)}
           <div class="dash-kpi-grid-phone">${kpiHTML}</div>
           <div class="m-sheet-card dash-sheet">
             <div class="m-grabber"></div>
             <div class="m-sheet-head"><h2>À traiter</h2></div>
             ${rows.length ? rows.map(rowHTML).join("") : `<div class="m-empty">Rien d'urgent pour le moment.</div>`}
           </div>
-          ${aiDashCardHTML(3)}
           ${dueHTML}`;
         return;
       }
@@ -12760,13 +12807,13 @@ ${lines}`;
           </div>
           <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">${eye}</div>
         </div>
+        ${aiDashCardHTML(5)}
         ${M.kpis.length ? `<div class="dis-kpi-grid">${kpiHTML}</div>` : ""}
         <div class="dash-cols">${M.cols.map(c => `
           <div class="card-container dash-col" style="margin-bottom:0;">
             <h3 class="card-title" style="margin-bottom:10px;">${c.title}</h3>
             <div class="dash-rows">${c.rows.map(rowHTML).join("")}</div>
           </div>`).join("")}</div>
-        ${aiDashCardHTML(5)}
         ${dueHTML}`;
     }
 
@@ -13897,7 +13944,6 @@ ${lines}`;
       if (!isViewAllowedForRole("prod-projects", getCurrentRole())) return "";
       return `<div class="time-pills fin-tabs prod-tabs">
         <span class="time-pill ${active === "prod-projects" ? "active" : ""}" onclick="navigate('prod-projects')">Projets en cours</span>
-        <span class="time-pill ${active === "kanban" ? "active" : ""}" onclick="navigate('kanban')">Suivi Kanban</span>
         <span class="time-pill ${active === "prod-calendar" ? "active" : ""}" onclick="navigate('prod-calendar')">Calendrier</span>
       </div>`;
     }
@@ -13908,15 +13954,15 @@ ${lines}`;
         if (!p) return;
         const done = Array.isArray(p.stages) && p.currentStageIndex >= p.stages.length - 1;
         const s = p.shootDate ? parseAnyDateToYMD(p.shootDate) : "";
-        if (s && s >= start && s <= end) out.push({ start: s, end: s, kind: "shoot", tone: "red", label: "Tournage", title: p.title, sub: p.clientName || "", onclick: isViewAllowedForRole("kanban", role) ? `activeKanbanFilterType='${dEsc(p.type)}'; navigate('kanban')` : "" });
+        if (s && s >= start && s <= end) out.push({ mine: calIsMine(p), start: s, end: s, kind: "shoot", tone: "red", label: "Tournage", title: p.title, sub: p.clientName || "", onclick: isViewAllowedForRole("kanban", role) ? `activeKanbanFilterType='${dEsc(p.type)}'; navigate('kanban')` : "" });
         const d = p.deliveryDate ? parseAnyDateToYMD(p.deliveryDate) : "";
-        if (d && !done && d >= start && d <= end) out.push({ start: d, end: d, kind: "delivery", tone: "teal", label: "Livraison", title: p.title, sub: p.clientName || "", onclick: isViewAllowedForRole("kanban", role) ? `activeKanbanFilterType='${dEsc(p.type)}'; navigate('kanban')` : "" });
+        if (d && !done && d >= start && d <= end) out.push({ mine: calIsMine(p), start: d, end: d, kind: "delivery", tone: "teal", label: "Livraison", title: p.title, sub: p.clientName || "", onclick: isViewAllowedForRole("kanban", role) ? `activeKanbanFilterType='${dEsc(p.type)}'; navigate('kanban')` : "" });
       });
       if (canUseReservations()) (state.equipmentReservations || []).filter(r => r && r.status !== "CANCELLED" && dOverlap(r.startDate, r.endDate, start, end))
-        .forEach(r => out.push({ start: r.startDate, end: r.endDate, kind: "res", tone: "blue", label: "Matériel", title: r.projectName || "Réservation", sub: `${r.employeeName || ""} · ${reservationItemsText(r)}`, onclick: "navigate('equip-reservations')" }));
+        .forEach(r => out.push({ accId: r.accountId, who: r.employeeName, start: r.startDate, end: r.endDate, kind: "res", tone: "blue", label: "Matériel", title: r.projectName || "Réservation", sub: `${r.employeeName || ""} · ${reservationItemsText(r)}`, onclick: "navigate('equip-reservations')" }));
       absencesOverlapping(start, end).forEach(a => {
         const show = absenceDetailVisible(a);
-        out.push({ start: a.startDate, end: a.endDate, kind: "abs", tone: "violet", label: "Absent", title: a.name, sub: show ? (ABSENCE_TYPES[a.type] || "") + (a.note ? " · " + a.note : "") : "Absent", onclick: "" });
+        out.push({ accId: a.accountId, start: a.startDate, end: a.endDate, kind: "abs", tone: "violet", label: "Absent", title: a.name, sub: show ? (ABSENCE_TYPES[a.type] || "") + (a.note ? " · " + a.note : "") : "Absent", onclick: "" });
       });
       (state.calendarEvents || []).filter(e => e && dOverlap(e.date, e.endDate || e.date, start, end))
         .forEach(e => out.push({ start: e.date, end: e.endDate || e.date, kind: "ev", tone: CAL_EVENT_TONES[e.type] || "amber", time: calEventTimeText(e), label: (CAL_EVENT_TYPES[e.type] || "Événement") + (calEventTimeText(e) ? " · " + calEventTimeText(e) : ""), title: e.title, sub: [e.location, e.note].filter(Boolean).join(" · "), id: e.id, ev: e }));
@@ -13931,7 +13977,7 @@ ${lines}`;
       const gridStart = dWeekStart(first);
       const gridDays = [];
       for (let d = gridStart; gridDays.length < 42; d = dAddDays(d, 1)) { gridDays.push(d); if (gridDays.length % 7 === 0 && d >= last) break; }
-      const items = calendarItemsBetween(gridDays[0], gridDays[gridDays.length - 1]);
+      const items = calMineFilter(calendarItemsBetween(gridDays[0], gridDays[gridDays.length - 1]));
       const dayItems = d => items.filter(it => it.start <= d && it.end >= d);
       const phone = !!window.DIGIT_IS_PHONE;
       const sel = dayItems(calDay).sort((a, b) => (a.time || "").localeCompare(b.time || ""));
@@ -13945,6 +13991,7 @@ ${lines}`;
           <button class="btn btn-gold" onclick="openCalendarEventDialog()">${svgIcon("plus", 15)} <span>Ajouter un événement</span></button>
         </div>
         ${prodTabsBarHTML("prod-calendar")}
+        ${calMineToggleHTML()}
         <div class="card-container">
           <div class="card-header">
             <h3 class="card-title" style="text-transform:capitalize;">${FRENCH_MONTHS[m - 1]} ${y}</h3>
@@ -13973,7 +14020,7 @@ ${lines}`;
               <span class="calm-bar"></span>
               <div style="flex:1; min-width:0;"><div class="calm-kind">${dEsc(i.label)}${i.start !== i.end ? ` · du ${dFr(i.start)} au ${dFr(i.end)}` : ""}</div><b>${dEsc(i.title)}</b>${i.sub ? `<div class="pay-item-sub">${dEsc(i.sub)}</div>` : ""}</div>
               ${i.ev && canDeleteEvent(i.ev) ? `<button type="button" class="pay-del" title="Supprimer l'événement" onclick="event.stopPropagation(); deleteCalendarEvent('${dEsc(i.ev.id)}')">${svgIcon("trash", 15)}</button>` : ""}
-            </div>`).join("")}</div>` : `<div class="dis-empty">Rien de prévu ce jour-là.</div>`}
+            </div>`).join("")}</div>` : `<div class="dis-empty">${calMineOn() ? "Rien de prévu pour vous ce jour-là." : "Rien de prévu ce jour-là."}</div>`}
         </div>`;
     }
     function calShiftMonth(delta) {
@@ -14061,6 +14108,90 @@ ${lines}`;
       if (changed) { saveState({ debounceCloud: true }); try { updateBadgesAndNotificationsUI(); } catch (e) {} }
       try { if (typeof maybeAutoBackup === "function") maybeAutoBackup(); } catch (e) {}
     }
+    /* ===== V1.29 : retour vers la page d'origine, agenda « Pour moi », bande « Ma semaine », rappel de tournage ===== */
+    const DIGIT_HUBS = ["dashboard", "ai-activity", "prod-calendar", "prod-projects", "kanban", "finances", "tva", "m-tva", "m-balance", "expenses", "param-ia", "param-journal", "absences", "equip-reservations"];
+    const DIGIT_DETAILS = ["proforma-view", "quote-editor", "client-detail", "project-empty", "flash-space"];
+    let digitReturnTo = null, digitGoingBack = false;
+    function digitTrackOrigin(from, to, params) {
+      if (digitGoingBack || from === to) return;
+      if (DIGIT_DETAILS.includes(to)) {
+        if (DIGIT_HUBS.includes(from)) digitReturnTo = { view: from, opened: to, finTab: typeof finTab !== "undefined" ? finTab : "" };
+        return;
+      }
+      if (!DIGIT_HUBS.includes(to) || !digitReturnTo || to !== digitReturnTo.view) digitReturnTo = null;
+    }
+    // Clic sur un bouton « ‹ » d'une fiche ouverte depuis une page de synthèse : on revient sur cette page
+    function digitBackToOrigin() {
+      const o = digitReturnTo;
+      if (!o || currentView !== o.opened) return false;
+      digitReturnTo = null; digitGoingBack = true;
+      try { navigate(o.view, o.view === "finances" && o.finTab ? { finTab: o.finTab } : {}); } finally { digitGoingBack = false; }
+      return true;
+    }
+    document.addEventListener("click", ev => {
+      const b = ev.target && ev.target.closest && ev.target.closest(".back-nav, .m-backbar, [data-back]");
+      if (b && digitBackToOrigin()) { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); }
+    }, true);
+    // Ce qui concerne la personne connectée dans l'agenda
+    function calIsMine(p) {
+      const me = getCurrentAccount(); if (!me || !p) return false;
+      const n = String(me.name || "").trim().toLowerCase();
+      return (p.assignees || []).some(st => (Array.isArray(st) ? st : [st]).some(x => String(x || "").trim().toLowerCase() === n));
+    }
+    let calMine = null;
+    function calMineOn() { if (calMine === null) calMine = !roleIs("ADMIN", "PDG"); return calMine; }
+    function calMineFilter(items) {
+      if (!calMineOn()) return items;
+      const me = getCurrentAccount() || {};
+      return items.filter(i => i.kind === "ev" || i.mine || (i.kind === "abs" && i.accId === me.id) || (i.kind === "res" && (i.accId === me.id || i.who === me.name)));
+    }
+    function calMineToggleHTML() {
+      const on = calMineOn();
+      return `<div class="time-pills cal-mine-pills"><span class="time-pill ${on ? "active" : ""}" onclick="calMine=true; renderProdCalendarView(document.getElementById('mainView'))">Pour moi</span><span class="time-pill ${on ? "" : "active"}" onclick="calMine=false; renderProdCalendarView(document.getElementById('mainView'))">Toute l'équipe</span></div>`;
+    }
+    // Bande « Ma semaine » en haut de « Projets en cours »
+    function myWeekHTML() {
+      const me = getCurrentAccount(); if (!me) return "";
+      const t = dToday(), days = Array.from({ length: 7 }, (_, i) => dAddDays(t, i));
+      const was = calMine; calMine = true;
+      const items = calMineFilter(calendarItemsBetween(days[0], days[6]));
+      calMine = was;
+      const short = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+      const next = items.slice().sort((a, b) => (a.start + (a.time || "")).localeCompare(b.start + (b.time || "")))[0];
+      return `<div class="card-container my-week">
+          <div class="card-header"><h3 class="card-title">${svgIcon("calendar", 16, "var(--primary)")} <span>Ma semaine</span></h3>
+            <span class="dis-muted" style="font-size:12px;">${next ? `Prochain : ${dEsc(next.label)} · ${dEsc(next.title)} le ${dFr(next.start)}` : "Rien de prévu pour vous cette semaine."}</span></div>
+          <div class="my-week-days">${days.map(d => {
+            const its = items.filter(i => i.start <= d && i.end >= d), tones = [...new Set(its.map(i => i.tone))].slice(0, 4);
+            return `<button type="button" class="my-week-day ${d === t ? "today" : ""} ${its.length ? "has" : ""}" onclick="calMine=true; calMonth=dMonthKey('${d}'); calDay='${d}'; navigate('prod-calendar')">
+              <span class="mw-d">${short[new Date(d + "T12:00:00").getDay()]}</span><span class="mw-n">${Number(d.slice(8))}</span>
+              <span class="calm-dots">${tones.map(x => `<i class="tone-${x}"></i>`).join("")}</span></button>`;
+          }).join("")}</div>
+        </div>`;
+    }
+    // Rappel la veille d'un tournage (à partir de 18 h), une seule fois par projet et par date
+    function checkShootReminders() {
+      const now = new Date(); if (now.getHours() < 18) return false;
+      const tomorrow = dAddDays(dToday(), 1); let changed = false;
+      (state.prodProjects || []).forEach(p => {
+        if (!p || !p.shootDate || parseAnyDateToYMD(p.shootDate) !== tomorrow || p.shootReminderFor === tomorrow) return;
+        const names = [...new Set((p.assignees || []).flat().map(x => String(x || "").trim()).filter(Boolean))];
+        p.shootReminderFor = tomorrow; p._updatedAt = Date.now(); changed = true;
+        if (!Array.isArray(state.notifications)) state.notifications = [];
+        names.forEach(n => {
+          const key = "shootrem_" + p.id + "_" + tomorrow + "_" + n;
+          if (state.notifications.some(x => x && x.reservationKey === key)) return;
+          state.notifications.unshift({ id: "notif_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6), reservationKey: key, category: "EQUIP", navTarget: "prod-calendar", targetAccountName: n,
+            projectTitle: p.title || "Projet", stageName: "Tournage demain", fromName: "Rappel agenda", remark: `${dFr(tomorrow)}${p.clientName ? " · " + p.clientName : ""}`,
+            date: new Date().toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }), read: false });
+        });
+      });
+      return changed;
+    }
+    if (!window.__v129ShootTimer) window.__v129ShootTimer = setInterval(() => {
+      try { if (getCurrentAccount() && checkShootReminders()) { saveState({ debounceCloud: true }); try { updateBadgesAndNotificationsUI(); } catch (e) {} } } catch (e) { console.error(e); }
+    }, 5 * 60 * 1000);
+
     /* V1.21 : rappels des événements de l'agenda (vérifiés chaque minute, un seul envoi grâce à reminderSentAt) */
     function calEventReminderDue(e) {
       if (!e || !e.reminder || e.reminderSentAt || !e.date) return false;
@@ -14350,7 +14481,7 @@ ${lines}`;
       // Reprise de l'ancien réglage unique (v1.21) pour le compte qu'il utilisait
       if (!c && state.aiConnector && state.aiConnector.accountId === accId) c = state.aiConnector;
       c = c ? JSON.parse(JSON.stringify(c)) : {};
-      return { enabled: !!c.enabled, maxAmount: Number(c.maxAmount) > 0 ? Number(c.maxAmount) : 500000, allowed: Object.assign({ lire: true, evenement: true, absence: false, depense: false, reservation: false, rapports: true }, c.allowed || {}), codes: Array.isArray(c.codes) ? c.codes : [] };
+      return { enabled: !!c.enabled, maxAmount: Number(c.maxAmount) > 0 ? Number(c.maxAmount) : 500000, allowed: Object.assign({ lire: true, evenement: true, absence: false, depense: false, reservation: false, rapports: true }, c.allowed || {}), codes: Array.isArray(c.codes) ? c.codes : [], reportDay: Math.min(28, Math.max(1, Math.round(Number(c.reportDay)) || 4)), reportHour: Math.min(23, Math.max(0, Number.isFinite(Number(c.reportHour)) && c.reportHour !== "" && c.reportHour != null ? Math.round(Number(c.reportHour)) : 8)) };
     }
     function aiSave(accId, cfg, label) {
       if (!aiManageableAccounts().some(a => a.id === accId)) return showToast("Action non autorisée.", true);
@@ -14406,19 +14537,86 @@ ${lines}`;
         </div>`;
     }
     function aiSetMax(v) { const id = aiTargetId(), c = aiCfg(id), n = Math.round(Number(v)); if (!(n >= 1000)) return showToast("Plafond invalide.", true); c.maxAmount = n; aiSave(id, c, `Connecteur IA : plafond par action ${formatFCFA(n)} FCFA`); }
-    // v1.27 : carte « Ce que l'IA a fait » sur le tableau de bord (Administrateur et Directeur général), avec annulation rapide
-    function aiDashCardHTML(max) {
-      if (typeof canManageAiConnector !== "function" || !canManageAiConnector()) return "";
-      const ids = aiManageableAccounts().map(a => a.id), me = (getCurrentAccount() || {}).id;
-      const logs = (state.auditLog || []).filter(a => a && a.via === "IA" && ids.includes(a.accountId)).sort((x, y) => Number(y.at) - Number(x.at)).slice(0, max);
-      if (!logs.length) return "";
-      const who = id => { const a = (state.accounts || []).find(x => x.id === id); return id === me || !a ? "" : ` <span class="dis-muted">(${dEsc(String(a.name || "").split(/\s+/)[0])})</span>`; };
-      return `<div class="card-container ai-dash">
-          <div class="card-header"><h3 class="card-title">${svgIcon("link", 16, "var(--c-blue)")} <span>Ce que l'IA a fait</span></h3>
-            <button type="button" class="btn btn-secondary" style="padding:6px 12px; font-size:12px;" onclick="navigate('param-ia')">Tout voir</button></div>
-          ${logs.map(l => { const done = aiUndoDone(l.id), can = l.undo && !done && Date.now() - Number(l.at) < 7 * 864e5;
-            return `<div class="ai-log"><div style="flex:1; min-width:0;"><span class="dis-muted">${new Date(Number(l.at)).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}</span> · ${dEsc(String(l.label || "").replace(/ via IA : .*$/, ""))}${who(l.accountId)}${done ? ` <span class="status-badge neutral">annulée</span>` : ""}</div>${can ? `<button type="button" class="btn btn-secondary" style="padding:5px 10px; font-size:12px;" onclick="aiUndo('${dEsc(l.id)}')">Annuler</button>` : ""}</div>`; }).join("")}
+    // v1.28 : « Activité IA » — carte en haut de l'accueil + onglet, chaque action ouvre l'élément concerné
+    const AI_KINDS = { INVOICE: ["factures", "receipt", "Facture"], PAYMENT: ["factures", "banknote", "Paiement"], TVA: ["factures", "calculator", "TVA"], CLIENT: ["clients", "users", "Client"],
+      EVENT: ["agenda", "calendar", "Agenda"], ABSENCE: ["agenda", "userX", "Absence"], EXPENSE: ["depenses", "fileMinus", "Dépense"], PROJECT: ["projets", "clapper", "Projet"],
+      RESERVATION: ["projets", "package", "Matériel"], NOTIF: ["autres", "bell", "Notification"], REPORT: ["rapports", "barChart", "Rapport"] };
+    const AI_FILTERS = [["tout", "Tout"], ["factures", "Factures"], ["clients", "Clients"], ["agenda", "Agenda"], ["depenses", "Dépenses"], ["projets", "Projets"], ["rapports", "Rapports"]];
+    let aiActFilter = "tout";
+    function aiKind(l) { return AI_KINDS[l.objectType] || (l.action === "AI_REPORT" ? AI_KINDS.REPORT : ["autres", "bolt", "Action"]); }
+    function aiActLogs() {
+      if (typeof canManageAiConnector !== "function" || !canManageAiConnector()) return [];
+      const ids = aiManageableAccounts().map(a => a.id);
+      return (state.auditLog || []).filter(a => a && a.via === "IA" && ids.includes(a.accountId)).sort((x, y) => Number(y.at) - Number(x.at));
+    }
+    function aiTodayCount() { const d = new Date().toDateString(); return aiActLogs().filter(l => new Date(Number(l.at)).toDateString() === d).length; }
+    function aiNavBadge() { try { const b = document.getElementById("aiNavCount"), n = aiTodayCount(); if (b) b.textContent = n ? String(n) : ""; } catch (e) {} }
+    // Facture (ou devis flash) liée à une ligne du journal
+    function aiInvoiceOf(l) {
+      let id = l.objectId;
+      if (l.objectType === "PAYMENT") { const p = (state.payments || []).find(x => x && x.id === id); id = p ? p.invoiceId : ""; }
+      const f = (state.flashQuotes || []).find(x => x && x.id === id); if (f) return { p: f, flash: true };
+      const p = (state.projects || []).find(x => x && x.id === id); return p ? { p, flash: false } : null;
+    }
+    function aiCanOpen(l) {
+      if (["INVOICE", "PAYMENT", "TVA"].includes(l.objectType)) return !!aiInvoiceOf(l);
+      if (l.objectType === "CLIENT") return (state.clients || []).some(c => c && c.id === l.objectId);
+      return ["EVENT", "ABSENCE", "EXPENSE", "PROJECT", "RESERVATION", "REPORT"].includes(l.objectType) || l.action === "AI_REPORT";
+    }
+    function aiOpen(logId) {
+      const l = (state.auditLog || []).find(a => a && a.id === logId); if (!l) return;
+      const t = l.objectType;
+      if (["INVOICE", "PAYMENT", "TVA"].includes(t)) { const x = aiInvoiceOf(l); if (!x) return showToast("Facture introuvable (peut-être supprimée).", true); return openAnyProject(x.p.id, x.flash); }
+      if (t === "CLIENT") { if (!(state.clients || []).some(c => c && c.id === l.objectId)) return showToast("Client introuvable.", true); return navigate("client-detail", { clientId: l.objectId }); }
+      const go = { EVENT: "prod-calendar", ABSENCE: "absences", EXPENSE: "expenses", PROJECT: "kanban", RESERVATION: "equip-reservations", REPORT: "finances" }[t] || (l.action === "AI_REPORT" ? "finances" : "");
+      if (go) navigate(go); else showToast("Rien à ouvrir pour cette action.");
+    }
+    function aiRowHTML(l, compact) {
+      const k = aiKind(l), done = aiUndoDone(l.id), can = l.undo && !done && Date.now() - Number(l.at) < 7 * 864e5, open = aiCanOpen(l);
+      const inv = l.objectType === "INVOICE" ? aiInvoiceOf(l) : null, draft = inv && inv.p.status !== "VALIDATED" && !done;
+      const me = (getCurrentAccount() || {}).id, ow = (state.accounts || []).find(x => x.id === l.accountId);
+      const who = l.accountId !== me && ow ? ` · ${dEsc(String(ow.name || "").split(/\s+/)[0])}` : "";
+      const label = dEsc(String(l.label || "").replace(/ via IA : .*$/, ""));
+      const when = new Date(Number(l.at)).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
+      return `<div class="ai-act-row ${done ? "done" : ""}">
+          <div class="ai-act-ico">${svgIcon(k[1], 17)}</div>
+          <div class="ai-act-main ${open ? "click" : ""}" ${open ? `onclick="aiOpen('${dEsc(l.id)}')"` : ""}>
+            <div class="ai-act-label">${label}</div>
+            <div class="ai-act-sub">${k[2]} · ${when}${l.aiName ? " · " + dEsc(l.aiName) : ""}${who}${done ? ` · <span class="status-badge neutral">annulée</span>` : draft ? ` · <span class="status-badge wait">brouillon à valider</span>` : ""}</div>
+          </div>
+          <div class="ai-act-btns">
+            ${draft ? `<button type="button" class="btn btn-gold" onclick="aiOpen('${dEsc(l.id)}')">${svgIcon("check", 14)} <span>Vérifier et valider</span></button>` : open && !compact ? `<button type="button" class="btn btn-secondary" onclick="aiOpen('${dEsc(l.id)}')">Ouvrir</button>` : ""}
+            ${can && !compact ? `<button type="button" class="btn btn-secondary" onclick="aiUndo('${dEsc(l.id)}')">Annuler</button>` : ""}
+            ${compact && open && !draft ? `<span class="ai-act-go">${svgIcon("chevronRight", 16)}</span>` : ""}
+          </div>
         </div>`;
+    }
+    function aiDashCardHTML(max) {
+      aiNavBadge();
+      const all = aiActLogs(); if (!all.length) return "";
+      const today = aiTodayCount(), drafts = all.filter(l => l.objectType === "INVOICE" && !aiUndoDone(l.id) && (aiInvoiceOf(l) || { p: {} }).p.status === "PENDING").length;
+      return `<div class="card-container ai-dash">
+          <div class="ai-dash-head">
+            <div class="ai-dash-title"><span class="ai-dash-badge">${svgIcon("bolt", 16)}</span><div><h3>Activité de l'IA</h3><div class="ai-act-sub">${today ? today + " action(s) aujourd'hui" : "Aucune action aujourd'hui"}${drafts ? ` · <b>${drafts} facture(s) à valider</b>` : ""}</div></div></div>
+            <button type="button" class="btn btn-secondary" onclick="navigate('ai-activity')">Tout voir</button>
+          </div>
+          ${all.slice(0, max).map(l => aiRowHTML(l, true)).join("")}
+        </div>`;
+    }
+    function renderAiActivityView(main) {
+      if (!canManageAiConnector()) return navigate(getDefaultViewForRole(getCurrentRole()));
+      aiNavBadge();
+      const all = aiActLogs(), f = aiActFilter;
+      const list = f === "tout" ? all : all.filter(l => aiKind(l)[0] === f);
+      const count = k => k === "tout" ? all.length : all.filter(l => aiKind(l)[0] === k).length;
+      main.innerHTML = `
+        <div class="page-header">
+          <div><div style="font-size:22px; font-weight:700; display:flex; align-items:center; gap:10px;">${svgIcon("bolt", 22, "var(--primary)")} <span>Activité IA</span></div>
+            <p class="dis-muted" style="font-size:13px; margin-top:4px;">Tout ce que les IA ont fait avec vos connecteurs. Touchez une ligne pour ouvrir l'élément.</p></div>
+          <button type="button" class="btn btn-secondary" onclick="navigate('param-ia')">${svgIcon("link", 15)} <span>Réglages du connecteur</span></button>
+        </div>
+        <div class="ai-filters">${AI_FILTERS.filter(([k]) => k === "tout" || count(k)).map(([k, t]) => `<button type="button" class="ai-chip ${k === f ? "on" : ""}" onclick="aiActFilter='${k}'; renderAiActivityView(document.getElementById('mainView'))">${t} <span>${count(k)}</span></button>`).join("")}</div>
+        <div class="card-container ai-act-list">${list.length ? list.slice(0, 150).map(l => aiRowHTML(l, false)).join("") : `<div class="dis-empty">Aucune action de l'IA pour l'instant.</div>`}</div>`;
     }
     function aiUndoDone(logId) { return (state.auditLog || []).some(a => a && a.action === "AI_UNDO" && a.objectId === logId); }
     // Annule une action de l'IA (7 jours) : un ajout est retiré, une modification revient à la version d'avant
@@ -14441,8 +14639,17 @@ ${lines}`;
     function aiReportLineHTML(accId, c) {
       const last = (state.auditLog || []).filter(a => a && a.action === "AI_REPORT" && a.accountId === accId).reduce((m, a) => Number(a.at) > Number(m ? m.at : 0) ? a : m, null);
       const when = last ? new Date(Number(last.at)).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }).replace(" ", " à ") : "aucun";
-      return `<div class="ai-report ${c.allowed.rapports === false ? "off" : ""}">${svgIcon("calendar", 16, "var(--c-blue)")}<div><b>Rapport mensuel :</b> le 4 de chaque mois à 8 h (tâche « Digit Impact Studio : rapport du mois » dans Claude, rubrique Scheduled).<br><b>Dernier rapport :</b> ${dEsc(when)}${c.allowed.rapports === false ? " · désactivé" : ""}</div></div>`;
+      const off = c.allowed.rapports === false;
+      const days = Array.from({ length: 28 }, (_, i) => i + 1), hours = Array.from({ length: 24 }, (_, i) => i);
+      return `<div class="ai-report ${off ? "off" : ""}">${svgIcon("calendar", 16, "var(--c-blue)")}<div style="flex:1; min-width:0;">
+          <div class="ai-report-set"><b>Rapport mensuel :</b> le
+            <select class="top-pill-select" onchange="aiSetReport('reportDay', this.value)" aria-label="Jour du mois">${days.map(d => `<option value="${d}" ${d === c.reportDay ? "selected" : ""}>${d}</option>`).join("")}</select>
+            de chaque mois à
+            <select class="top-pill-select" onchange="aiSetReport('reportHour', this.value)" aria-label="Heure">${hours.map(h => `<option value="${h}" ${h === c.reportHour ? "selected" : ""}>${h} h</option>`).join("")}</select></div>
+          <div>Tâche « Digit Impact Studio : rapport du mois » dans Claude (rubrique Scheduled). Après un changement, demandez à Claude : « mets la tâche du rapport mensuel au ${c.reportDay} à ${c.reportHour} h ».</div>
+          <div><b>Dernier rapport :</b> ${dEsc(when)}${off ? " · désactivé" : ""}</div></div></div>`;
     }
+    function aiSetReport(k, v) { const id = aiTargetId(), c = aiCfg(id), n = Math.round(Number(v)); c[k] = n; aiSave(id, c, `Connecteur IA : rapport mensuel le ${c.reportDay} à ${c.reportHour} h`); }
     function aiSetAllowed(k, v) { const id = aiTargetId(), c = aiCfg(id); c.allowed[k] = !!v; aiSave(id, c, `Connecteur IA : « ${AI_ACTIONS[k]} » ${v ? "autorisé" : "retiré"}`); }
     function aiCreateCode() {
       const id = aiTargetId();

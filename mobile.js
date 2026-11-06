@@ -62,7 +62,7 @@
   const BILLING = ["home", "add-client", "clients-folders", "client-detail", "flash-space", "project-empty", "quote-editor", "proforma-view", "m-factures"];
   const GESTION = ["m-menu", "management", "gestion-sub", "account", "param-templates", "param-profile", "param-db", "param-trash"];
   const TABS = {
-    home: { label: "Accueil", icon: I.grid, go: () => navigate(allowed("dashboard") ? "dashboard" : "prod-projects"), views: ["dashboard", "prod-projects", "kanban", "prod-calendar"] },
+    home: { label: "Accueil", icon: I.grid, go: () => navigate(allowed("dashboard") ? "dashboard" : "prod-projects"), views: ["dashboard", "ai-activity", "prod-projects", "kanban", "prod-calendar"] },
     materiel: { label: "Matériel", icon: I.camera, go: () => navigate("equip-checkout"), views: ["equip-checkout", "equip-reservations", "equip-inventory"] },
     finance: { label: "Finance", icon: I.card, go: () => navigate("m-factures"), views: [...BILLING, "m-balance", "m-tva", "finances", "expenses"] },
     factures: { label: "Factures", icon: I.doc, go: () => navigate("m-factures"), views: BILLING },
@@ -80,9 +80,10 @@
   // Onglets internes en haut de page (comme « Balance / Dépenses » sur les captures)
   function segmentsFor(view) {
     const r = role();
-    if (r !== "COMPTABLE" && ["dashboard", "prod-projects", "kanban", "prod-calendar"].includes(view)) {
+    if (r !== "COMPTABLE" && ["dashboard", "ai-activity", "prod-projects", "kanban", "prod-calendar"].includes(view)) {
       const s = allowed("dashboard") ? [["dashboard", "Résumé", I.pulse]] : [];
-      return [...s, ["prod-projects", "Projets", I.clapper], ["kanban", "Kanban", I.grid], ["prod-calendar", "Agenda", I.calendar]];
+      if (r === "ADMIN" || r === "PDG") s.push(["ai-activity", "IA", I.bolt]);
+      return [...s, ["prod-projects", "Projets", I.clapper], ["prod-calendar", "Agenda", I.calendar]];
     }
     if (["equip-checkout", "equip-reservations", "equip-inventory"].includes(view)) return [["equip-checkout", "Sorties", I.box], ["equip-reservations", "Réserver", I.calendar], ["equip-inventory", "Parc", I.camera]];
     if (r === "COMPTABLE" && ["dashboard", "m-balance", "m-tva"].includes(view)) return [["dashboard", "Résumé", I.pulse], ["m-balance", "Balance", I.card], ["m-tva", "TVA", I.doc]];
@@ -157,7 +158,7 @@
     const bar = document.createElement("div");
     bar.className = "m-segbar";
     bar.dataset.for = currentView;
-    bar.innerHTML = segs.map(([v, label, icon]) => `<button type="button" class="m-seg ${v === currentView ? 'active' : ''}" data-v="${v}"><span style="width:18px;height:18px;display:flex;">${icon}</span><span>${label}</span></button>`).join("");
+    bar.innerHTML = segs.map(([v, label, icon]) => `<button type="button" class="m-seg ${v === currentView ? 'active' : ''}" data-v="${v}"><span style="width:18px;height:18px;display:flex;">${icon}</span><span>${label}</span>${v === "ai-activity" && v !== currentView && typeof aiTodayCount === "function" && aiTodayCount() ? `<span class="m-seg-dot">${Math.min(99, aiTodayCount())}</span>` : ""}</button>`).join("");
     bar.querySelectorAll(".m-seg").forEach(b => b.onclick = () => navigate(b.dataset.v));
     main.insertBefore(bar, main.firstChild);
   }
@@ -188,7 +189,7 @@
 
   /* ---------- Bouton « Retour » sur les écrans qui n'en ont pas ---------- */
   // Écrans d'onglet (accessibles par la barre du bas ou les onglets du haut) : pas besoin de retour
-  const ROOT_VIEWS = ["dashboard", "prod-projects", "kanban", "equip-checkout", "equip-reservations", "equip-inventory", "m-factures", "m-balance", "expenses", "m-menu"];
+  const ROOT_VIEWS = ["dashboard", "ai-activity", "prod-projects", "kanban", "equip-checkout", "equip-reservations", "equip-inventory", "m-factures", "m-balance", "expenses", "m-menu"];
   // « TVA » est un écran d'onglet pour le comptable ; pour les autres on y arrive depuis la Balance (bouton Retour utile)
   // « Agenda » est un onglet de l'Accueil ; le comptable y arrive depuis Gestion
   const isRoot = v => ROOT_VIEWS.includes(v) || (v === "m-tva" && role() === "COMPTABLE") || (v === "prod-calendar" && role() !== "COMPTABLE");
