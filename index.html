@@ -988,8 +988,33 @@
   </style>
   <!-- Version téléphone (inactive dans l'application Mac / Windows) -->
   <link rel="stylesheet" href="mobile.css" />
+  <style>
+    /* v1.24 : écran de démarrage du téléphone (évite l'apparition de la version ordinateur avant l'application) */
+    body.m-boot > * { visibility: hidden !important; }
+    body.m-boot { background: #070707 !important; }
+    body.m-boot::after { content: ""; position: fixed; inset: 0; z-index: 2147483647; visibility: visible; background: #070707 url("icons/apple-touch-icon.png") center / 76px 76px no-repeat; }
+  </style>
 </head>
 <body>
+  <script>
+    /* v1.24 : sur téléphone, écran de démarrage jusqu'à ce que l'application (accueil ou connexion) soit prête */
+    (function () {
+      try {
+        if (window.digitDesktop) return;
+        var phone = window.matchMedia("(max-width: 820px)").matches || /iPhone|iPod|Android.*Mobile/i.test(navigator.userAgent);
+        if (!phone) return;
+        var b = document.body, t0 = Date.now(), okSince = 0;
+        b.classList.add("is-mobile", "m-boot");
+        (function wait() {
+          var a = document.getElementById("authScreen");
+          var ready = document.readyState === "complete" && ((a && a.classList.contains("active")) || document.getElementById("mBrand"));
+          if (ready) { if (!okSince) okSince = Date.now(); if (Date.now() - okSince > 250) { b.classList.remove("m-boot"); return; } } else okSince = 0;
+          if (Date.now() - t0 > 6000) { b.classList.remove("m-boot"); return; }
+          requestAnimationFrame(wait);
+        })();
+      } catch (e) { document.body.classList.remove("m-boot"); }
+    })();
+  </script>
 
   <!-- CONTENEUR DE NOTIFICATIONS TOAST -->
   <div class="toast-container" id="toastContainer"></div>
