@@ -937,6 +937,10 @@
     .ai-code.off { opacity:.55; }
     .ai-log { display:flex; align-items:center; gap:10px; font-size:12.5px; padding:8px 0; border-bottom:1px solid var(--border); line-height:1.45; }
     .ai-log:last-child { border-bottom:0; }
+    .ai-report { display:flex; align-items:flex-start; gap:10px; margin:10px 0 4px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:12.5px; line-height:1.5; color:var(--text-muted); background:var(--bg-row); }
+    .ai-report svg { flex:0 0 auto; margin-top:2px; }
+    .ai-report b { color:var(--text-main); font-weight:600; }
+    .ai-report.off { opacity:.6; }
     @media (max-width:480px) { .ai-row { flex-direction:column; } }
     .ce-allday { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-main); margin:2px 0 14px; cursor:pointer; }
     .ce-allday input { width:16px; height:16px; accent-color:var(--primary); }
@@ -14321,7 +14325,7 @@ ${lines}`;
     /* ===== V1.20 — FIN ===== */
     /* ===== V1.21 — DÉBUT : connecteur multi-IA (v1.22 : un connecteur par personne, Administrateur et Directeur général) ===== */
     const AI_CONNECTOR_URL = "https://pydirhnchnvcxmyeeamj.supabase.co/functions/v1/connecteur-ia";
-    const AI_ACTIONS = { lire: "Consulter (agenda, clients, factures, finances, TVA, dépenses, matériel, briefing, relances)", evenement: "Agenda : créer et modifier des événements", absence: "Déclarer des absences", clients: "Clients : ajouter et modifier", factures: "Factures : créer en brouillon (validation dans le logiciel)", paiements: "Paiements : enregistrer un paiement reçu", depense: "Dépenses : ajouter, valider ou refuser", tva: "TVA : marquer comme versée", projets: "Projets : créer et changer d'étape", reservation: "Matériel : réserver et annuler une réservation", notifications: "Envoyer des notifications à l'équipe" };
+    const AI_ACTIONS = { lire: "Consulter (agenda, clients, factures, finances, TVA, dépenses, matériel, briefing, relances)", evenement: "Agenda : créer et modifier des événements", absence: "Déclarer des absences", clients: "Clients : ajouter et modifier", factures: "Factures : créer en brouillon (validation dans le logiciel)", paiements: "Paiements : enregistrer un paiement reçu", depense: "Dépenses : ajouter, valider ou refuser", tva: "TVA : marquer comme versée", projets: "Projets : créer et changer d'étape", reservation: "Matériel : réserver et annuler une réservation", notifications: "Envoyer des notifications à l'équipe", rapports: "Rapports automatiques (rapport du mois)" };
     let aiTarget = "";
     function canManageAiConnector() { return roleIs("ADMIN", "PDG"); }
     // Connecteurs que la personne connectée peut gérer : le sien ; l'Administrateur gère aussi ceux des Directeurs généraux
@@ -14342,7 +14346,7 @@ ${lines}`;
       // Reprise de l'ancien réglage unique (v1.21) pour le compte qu'il utilisait
       if (!c && state.aiConnector && state.aiConnector.accountId === accId) c = state.aiConnector;
       c = c ? JSON.parse(JSON.stringify(c)) : {};
-      return { enabled: !!c.enabled, maxAmount: Number(c.maxAmount) > 0 ? Number(c.maxAmount) : 500000, allowed: Object.assign({ lire: true, evenement: true, absence: false, depense: false, reservation: false }, c.allowed || {}), codes: Array.isArray(c.codes) ? c.codes : [] };
+      return { enabled: !!c.enabled, maxAmount: Number(c.maxAmount) > 0 ? Number(c.maxAmount) : 500000, allowed: Object.assign({ lire: true, evenement: true, absence: false, depense: false, reservation: false, rapports: true }, c.allowed || {}), codes: Array.isArray(c.codes) ? c.codes : [] };
     }
     function aiSave(accId, cfg, label) {
       if (!aiManageableAccounts().some(a => a.id === accId)) return showToast("Action non autorisée.", true);
@@ -14381,6 +14385,7 @@ ${lines}`;
         <div class="card-container">
           <h3 class="card-title" style="margin-bottom:12px;">Actions autorisées</h3>
           ${Object.keys(AI_ACTIONS).map(k => `<label class="ce-allday"><input type="checkbox" ${c.allowed[k] ? "checked" : ""} onchange="aiSetAllowed('${k}', this.checked)" /> <span>${AI_ACTIONS[k]}</span></label>`).join("")}
+          ${aiReportLineHTML(tid, c)}
           <div class="form-group" style="margin:8px 0 0;"><label>Plafond par action (FCFA)</label>
             <input type="number" class="form-input" min="1000" step="1000" value="${c.maxAmount}" onchange="aiSetMax(this.value)" style="max-width:220px;" />
             <div class="dis-muted" style="font-size:12px; margin-top:6px;">Au-delà (paiement, dépense, TVA), l'IA refuse et l'opération se fait dans le logiciel. Chaque action de l'IA vous est notifiée et peut être annulée pendant 7 jours.</div></div>
@@ -14414,6 +14419,12 @@ ${lines}`;
       saveState(); rerenderCurrentView(); showToast("Action annulée.");
     }
     function aiToggle(on) { const id = aiTargetId(), c = aiCfg(id); c.enabled = !!on; aiSave(id, c, on ? "Connecteur IA activé" : "Connecteur IA coupé"); }
+    // v1.25 : rapport mensuel automatique (tâche programmée de Claude) et date du dernier rapport produit pour ce connecteur
+    function aiReportLineHTML(accId, c) {
+      const last = (state.auditLog || []).filter(a => a && a.action === "AI_REPORT" && a.accountId === accId).reduce((m, a) => Number(a.at) > Number(m ? m.at : 0) ? a : m, null);
+      const when = last ? new Date(Number(last.at)).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }).replace(" ", " à ") : "aucun";
+      return `<div class="ai-report ${c.allowed.rapports === false ? "off" : ""}">${svgIcon("calendar", 16, "var(--c-blue)")}<div><b>Rapport mensuel :</b> le 4 de chaque mois à 8 h (tâche « Digit Impact Studio : rapport du mois » dans Claude, rubrique Scheduled).<br><b>Dernier rapport :</b> ${dEsc(when)}${c.allowed.rapports === false ? " · désactivé" : ""}</div></div>`;
+    }
     function aiSetAllowed(k, v) { const id = aiTargetId(), c = aiCfg(id); c.allowed[k] = !!v; aiSave(id, c, `Connecteur IA : « ${AI_ACTIONS[k]} » ${v ? "autorisé" : "retiré"}`); }
     function aiCreateCode() {
       const id = aiTargetId();
