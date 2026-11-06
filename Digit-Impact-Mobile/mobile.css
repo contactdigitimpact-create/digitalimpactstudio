@@ -1,0 +1,428 @@
+/* =========================================================================
+   Digit Impact Studio — version TÉLÉPHONE (iPhone / Android)
+   Active uniquement quand body a la classe « is-mobile » (voir mobile.js).
+   L'application Mac / Windows n'est pas concernée.
+   ========================================================================= */
+
+body.is-mobile {
+  --m-top: calc(52px + env(safe-area-inset-top, 0px));
+  --m-lift: 76px;
+  --m-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+  display: block; height: 100vh; height: 100dvh; overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+body.is-mobile .sidebar, body.is-mobile .topbar, body.is-mobile .mobile-backdrop,
+body.is-mobile .mac-drag-strip, body.is-mobile .wa-paste-helper { display: none !important; }
+body.is-mobile .workspace { height: 100vh; height: 100dvh; }
+body.is-mobile .content-area {
+  flex-direction: column; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
+  padding-top: var(--m-top); padding-bottom: var(--m-bottom); height: 100%;
+}
+body.is-mobile .main-view { padding: 10px 12px 22px; overflow: visible; max-width: none; }
+body.is-mobile .right-panel { width: 100%; padding: 14px 12px 22px; border-left: none; border-top: 1px solid var(--border); }
+/* Taille adaptée au téléphone : tous les écrans (pensés pour ordinateur) sont réduits d'environ 15 % */
+body.is-mobile .main-view, body.is-mobile .right-panel, body.is-mobile .modal-box, body.is-mobile .stamp-adj-card { zoom: 0.86; }
+body.is-mobile .auth-card { zoom: 0.86; padding: 26px 20px; }
+
+/* ---------- En-tête fixe ---------- */
+.m-header { display: none; }
+body.is-mobile .m-header {
+  display: flex; position: fixed; top: 0; left: 0; right: 0; z-index: 400;
+  height: var(--m-top); padding: env(safe-area-inset-top, 0px) 16px 0;
+  align-items: center; justify-content: space-between; gap: 10px;
+  background: color-mix(in srgb, var(--bg-main) 92%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.m-brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.m-brand .exact-di-square { width: 30px; height: 30px; border-radius: 5px; box-shadow: 0 2px 8px rgba(234,29,44,0.35); }
+.m-brand .exact-di-square span { font-size: 16px; font-weight: 700; letter-spacing: -0.5px; }
+.m-brand-text { white-space: nowrap; line-height: 1; }
+.m-brand-main { font-family: 'Ubuntu', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-main); }
+.m-brand-main .impact-red { color: #ea1d2c; }
+.m-brand-sub { font-size: 6.5px; font-weight: 500; color: var(--text-main); letter-spacing: 4.2px; margin-top: 4px; }
+.m-head-actions { display: flex; align-items: center; gap: 7px; }
+.m-icon-btn svg { width: 18px; height: 18px; }
+.m-icon-btn {
+  position: relative; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--bg-card); color: var(--text-main); display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.m-icon-btn .m-badge {
+  position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px;
+  background: #ea1d2c; color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+}
+.m-avatar-btn { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--accent-btn); padding: 0; overflow: hidden; background: #1e293b; color: #fff; font-weight: 800; font-size: 11.5px; cursor: pointer; }
+.m-avatar-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ---------- Barre d'onglets + bouton + central ---------- */
+.m-tabbar { display: none; }
+body.is-mobile .m-tabbar {
+  display: grid; grid-template-columns: 1fr 1fr 70px 1fr 1fr; align-items: stretch;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 400;
+  height: var(--m-bottom); padding: 0 4px calc(env(safe-area-inset-bottom, 0px) + 22px); box-sizing: border-box;
+  background: color-mix(in srgb, var(--bg-card) 96%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--border); border-radius: 18px 18px 0 0;
+}
+/* Icône + texte toujours entièrement visibles dans la barre */
+.m-tab {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  height: 100%; min-width: 0; padding: 8px 0 2px; border: none; background: none; color: #9a9a9a;
+  font-size: 12px; line-height: 1.15; font-weight: 600; cursor: pointer; position: relative;
+}
+.m-tab span:not(.m-badge) { display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-tab svg { width: 27px; height: 27px; flex-shrink: 0; }
+.m-tab.active { color: var(--accent-btn); }
+.m-tab .m-badge { position: absolute; top: 3px; right: calc(50% - 20px); min-width: 16px; height: 16px; border-radius: 8px; background: #ea1d2c; color: #fff; font-size: 9.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+.m-fab-slot { display: flex; justify-content: center; align-items: flex-start; }
+.m-fab {
+  width: 60px; height: 60px; border-radius: 50%; border: 3px solid var(--bg-main); margin-top: -24px;
+  background: linear-gradient(180deg, #5a5a5a, #3a3a3a); color: #fff; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.5); cursor: pointer;
+}
+.m-fab svg { width: 30px; height: 30px; }
+.m-fab:active { transform: scale(0.95); }
+
+/* ---------- Panneau qui monte du bas (« Que voulez-vous faire ? ») ---------- */
+.m-sheet-overlay { position: fixed; inset: 0; z-index: 900; background: rgba(0,0,0,0.55); display: flex; align-items: flex-end; animation: mFade .18s ease-out; }
+.m-sheet-panel {
+  width: 100%; max-height: 88vh; overflow-y: auto; background: var(--bg-card); color: var(--text-main);
+  border-radius: 22px 22px 0 0; padding: 8px 14px calc(16px + env(safe-area-inset-bottom, 0px));
+  animation: mSlideUp .24s cubic-bezier(.2,.8,.2,1);
+}
+.m-grabber { width: 40px; height: 4px; border-radius: 3px; background: rgba(148,163,184,0.45); margin: 2px auto 12px; }
+.m-sheet-title { font-size: 18px; font-weight: 800; margin-bottom: 12px; }
+.m-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.m-tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; min-height: 86px; padding: 10px 8px;
+  border-radius: 15px; border: 2px solid transparent; background: var(--bg-row); color: var(--text-main);
+  font-size: 13.5px; font-weight: 700; cursor: pointer; text-align: center;
+}
+.m-tile svg { width: 26px; height: 26px; }
+.m-tile.selected { border-color: var(--accent-btn); background: color-mix(in srgb, var(--accent-btn) 18%, var(--bg-row)); }
+.m-tiles-small { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.m-tiles-small .m-tile { min-height: 70px; font-size: 11.5px; gap: 5px; border-radius: 13px; }
+.m-tiles-small .m-tile svg { width: 20px; height: 20px; }
+.m-sheet-sub { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; margin: 14px 0 2px; }
+.m-next-btn { width: 100%; margin-top: 14px; padding: 13px; border-radius: 14px; border: none; font-size: 15px; font-weight: 800; cursor: pointer; background: var(--bg-row); color: var(--text-muted); }
+.m-next-btn.ready { background: var(--accent-btn); color: #fff; }
+@keyframes mSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes mFade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- Bouton « Retour » ajouté sur les écrans qui n'en ont pas ---------- */
+.m-backbar { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 12px; padding: 7px 14px 7px 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-size: 15px; font-weight: 700; cursor: pointer; }
+.m-backbar .m-back-chev { font-size: 24px; line-height: 0.8; margin-top: -2px; }
+
+/* ---------- Onglets internes (Projets / Kanban, Factures / Balance / Dépenses...) ---------- */
+.m-segbar { display: flex; gap: 6px; padding: 5px; margin: 0 0 14px; border-radius: 16px; background: var(--bg-card); border: 1px solid var(--border); }
+.m-seg { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 11px 6px; border: none; border-radius: 12px; background: transparent; color: var(--text-muted); font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.m-seg svg { width: 18px; height: 18px; }
+.m-seg.active { background: var(--bg-card-hover); color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+
+/* ---------- Accueil Facturation (dossiers + projets récents) ---------- */
+.m-page-title { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; margin: 4px 0 14px; }
+.m-search { display: flex; align-items: center; gap: 10px; padding: 0 16px; height: 52px; border-radius: 16px; border: 1.5px solid var(--border); background: transparent; margin-bottom: 18px; }
+.m-search input { flex: 1; background: transparent; border: none; outline: none; color: var(--text-main); font-size: 17px; }
+.m-search svg { color: var(--text-muted); }
+.m-folders { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+.m-folders .folder-3d-item { width: 100%; }
+.m-folders .folder-3d-box { width: 100%; max-width: 170px; height: 118px; }
+.m-folders .folder-title { font-size: 19px; font-weight: 800; max-width: none; }
+.m-sheet-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 26px; padding: 10px 18px 8px; margin: 0 -4px; }
+.m-sheet-head { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 6px; }
+.m-sheet-head h2 { font-size: 25px; font-weight: 800; }
+.m-filter-btn { border: none; background: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; }
+.m-list-row { display: flex; justify-content: space-between; gap: 12px; padding: 15px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+.m-list-row:last-child { border-bottom: none; }
+.m-list-row .l { min-width: 0; }
+.m-list-row .l .t { font-size: 17px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-list-row .l .s, .m-list-row .r .s { font-size: 15px; color: var(--text-muted); margin-top: 2px; }
+.m-list-row .r { text-align: right; flex-shrink: 0; max-width: 55%; }
+.m-list-row .r .t { font-size: 14.5px; font-weight: 600; white-space: nowrap; }
+.m-list-row .r .s { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; }
+.m-status-wait { color: #f59e0b; }
+.m-status-ok { color: #22c55e; }
+.m-status-ko { color: #ef4444; }
+.m-empty { padding: 34px 10px; text-align: center; color: var(--text-muted); font-size: 14px; }
+
+/* ---------- Finance : carte Total Balance ---------- */
+.m-balance-card { position: relative; overflow: hidden; border-radius: 22px; border: 1px solid var(--border); background: linear-gradient(145deg, var(--bg-card), var(--bg-main)); margin-bottom: 16px; }
+.m-balance-card::after { content: ""; position: absolute; top: -70px; right: -60px; width: 220px; height: 220px; border-radius: 50%; border: 1.5px solid rgba(148,163,184,0.18); }
+.m-balance-top { padding: 20px 20px 16px; }
+.m-balance-label { display: flex; justify-content: space-between; align-items: center; font-size: 22px; font-weight: 800; color: var(--text-muted); }
+.m-eye { border: none; background: none; color: var(--text-muted); cursor: pointer; padding: 4px; position: relative; z-index: 1; }
+.m-balance-value { font-size: 30px; font-weight: 800; margin-top: 14px; letter-spacing: -0.5px; }
+.m-balance-bottom { display: flex; justify-content: space-between; gap: 10px; padding: 14px 20px 16px; background: rgba(0,0,0,0.18); }
+.m-balance-bottom div { font-size: 13px; color: var(--text-muted); }
+.m-balance-bottom strong { display: block; font-size: 16px; margin-top: 3px; color: var(--accent-btn); }
+.m-masked { letter-spacing: 3px; }
+
+/* ---------- Gestion : grandes cartes colorées ---------- */
+.m-cards { display: flex; flex-direction: column; gap: 12px; }
+.m-card { display: flex; align-items: center; gap: 16px; padding: 18px 18px; border-radius: 22px; border: 1px solid rgba(255,255,255,0.10); color: #fff; cursor: pointer; text-align: left; width: 100%; }
+.m-card .ic { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.m-card .ic svg { width: 36px; height: 36px; }
+.m-card .tx { flex: 1; min-width: 0; }
+.m-card .tx b { display: block; font-size: 19px; font-weight: 800; }
+.m-card .tx span { display: block; font-size: 13.5px; color: rgba(255,255,255,0.72); margin-top: 2px; }
+.m-card .ch { color: rgba(255,255,255,0.7); font-size: 26px; line-height: 1; }
+.m-c1 { background: linear-gradient(135deg, #103c4a, #0a2530); } .m-c2 { background: linear-gradient(135deg, #17493b, #0d2a22); }
+.m-c3 { background: linear-gradient(135deg, #5a4a18, #2c240b); } .m-c4 { background: linear-gradient(135deg, #0c3e60, #072640); }
+.m-c5 { background: linear-gradient(135deg, #2d3060, #181a3a); } .m-c6 { background: linear-gradient(135deg, #5b1d2d, #2f0e17); }
+.m-c7 { background: linear-gradient(135deg, #3b2d54, #1f1730); } .m-c8 { background: linear-gradient(135deg, #3a3a3a, #1c1c1c); }
+.m-section-title { font-size: 13px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: .7px; margin: 22px 2px 10px; }
+.m-profile { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 20px; background: var(--bg-card); border: 1px solid var(--border); margin-bottom: 6px; }
+.m-profile .emp-avatar-circle { width: 54px !important; height: 54px !important; font-size: 17px; }
+.m-row-btn { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 15px 16px; border-radius: 16px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
+.m-row-btn.danger { color: #ef4444; }
+
+/* ---------- Écrans existants : adaptation au téléphone ---------- */
+body.is-mobile .page-header { gap: 10px; margin-bottom: 14px; padding-bottom: 10px; }
+body.is-mobile .page-header > div:first-child[style*="font-size:24px"] { font-size: 21px !important; }
+body.is-mobile .page-header > .btn, body.is-mobile .page-header > div > .btn { font-size: 13px; padding: 10px 14px; }
+body.is-mobile .back-nav { font-size: 17px; gap: 8px; }
+body.is-mobile .back-nav > span:first-child { font-size: 26px; line-height: 1; }
+body.is-mobile .back-nav { flex-wrap: nowrap; align-items: center; }
+body.is-mobile .back-nav > span:first-child { flex-shrink: 0; padding: 4px 10px 4px 2px; }
+body.is-mobile .back-nav > span:last-child { min-width: 0; flex: 1; line-height: 1.25; }
+body.is-mobile .card-container { padding: 16px; border-radius: 18px; margin-bottom: 14px; }
+body.is-mobile .cards-grid-3 { grid-template-columns: 1fr; gap: 12px; }
+body.is-mobile .equip-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+body.is-mobile .equip-mini-grid { grid-template-columns: 1fr 1fr; }
+body.is-mobile .equip-card { padding: 10px; border-radius: 14px; }
+body.is-mobile .equip-photo-box { height: 110px; }
+body.is-mobile .folders-row { gap: 14px; display: grid; grid-template-columns: repeat(3, 1fr); }
+body.is-mobile .folders-row .folder-3d-box { width: 100%; height: 84px; border-radius: 14px; }
+body.is-mobile .folders-row .folder-title { font-size: 13.5px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.is-mobile .folders-row .folder-bottom-meta { display: none; }
+body.is-mobile .folders-row .folder-front-glass { padding: 10px; }
+body.is-mobile .pill-table-header { display: none; }
+body.is-mobile .pill-row { grid-template-columns: 1fr !important; gap: 6px; border-radius: 16px; padding: 14px; }
+body.is-mobile .kanban-board { margin: 0 -14px; padding: 0 14px 12px; scroll-snap-type: x mandatory; }
+body.is-mobile .kanban-col { min-width: 84vw; scroll-snap-align: start; }
+body.is-mobile .time-pills { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+body.is-mobile .time-pill { white-space: nowrap; }
+body.is-mobile .totals-table { min-width: 0; width: 100%; }
+body.is-mobile .grid-2cols { grid-template-columns: 1fr; gap: 14px; }
+body.is-mobile .devis-table { display: block; overflow-x: auto; }
+body.is-mobile .form-input, body.is-mobile select, body.is-mobile textarea { font-size: 16px; } /* évite le zoom automatique d'iPhone */
+body.is-mobile .btn { min-height: 42px; }
+body.is-mobile [style*="min-width:240px"], body.is-mobile [style*="min-width:220px"], body.is-mobile [style*="min-width:190px"] { min-width: 0 !important; }
+body.is-mobile .gestion-card { height: auto; min-height: 110px; }
+body.is-mobile .toast-container { left: 12px; right: 12px; bottom: calc(var(--m-bottom) + 10px); }
+body.is-mobile .toast-item { font-size: 13.5px; }
+body.is-mobile .tab-search-banner { position: sticky; top: 0; z-index: 5; }
+
+/* Rien ne doit dépasser de la largeur de l'écran */
+body.is-mobile .main-view, body.is-mobile .right-panel { overflow-wrap: anywhere; }
+body.is-mobile .main-view .status-badge { white-space: normal; text-align: left; max-width: 100%; }
+body.is-mobile .main-view img, body.is-mobile .main-view table { max-width: 100%; }
+body.is-mobile .page-header [style*="font-size:24px"] { font-size: 20px !important; }
+body.is-mobile .page-header p { display: none; }  /* descriptions longues : inutiles sur téléphone */
+body.is-mobile .page-header [onclick="navigate('kanban')"],
+body.is-mobile .page-header [onclick="navigate('equip-inventory')"],
+body.is-mobile .page-header [onclick="navigate('equip-checkout')"] { display: none; } /* déjà dans les onglets du haut */
+body.is-mobile .size-slider-wrap { display: none; }
+body.is-mobile .page-header > div:last-child { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Kanban : types de projets sur une seule ligne qui défile */
+body.is-mobile .page-header > div:last-child:has(> button[onclick*="activeKanbanFilterType"]) { flex-wrap: nowrap !important; overflow-x: auto; width: 100%; padding-bottom: 6px; scrollbar-width: none; }
+body.is-mobile .page-header > div:last-child:has(> button[onclick*="activeKanbanFilterType"]) > button { flex-shrink: 0; }
+/* Cartes « Projets en cours » : logo, infos et progression les uns sous les autres */
+body.is-mobile .pill-table-body > .card-container { padding: 14px; }
+body.is-mobile .pill-table-body > .card-container > div[style*="justify-content:space-between"] { flex-direction: column; align-items: stretch !important; gap: 12px !important; }
+body.is-mobile .pill-table-body > .card-container [style*="min-width:190px"] { text-align: left !important; }
+body.is-mobile .pill-table-body > .card-container [style*="min-width:190px"] > div[style*="justify-content:flex-end"] { justify-content: flex-start !important; }
+body.is-mobile .proj-logo-slot { width: 58px; height: 58px; }
+
+/* Fenêtres : au milieu de l'écran (plus en bas) ; la recherche s'ouvre en haut (voir plus bas) */
+body.is-mobile .modal-overlay { align-items: center; justify-content: center; padding: calc(12px + env(safe-area-inset-top, 0px)) 12px calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 950; }
+body.is-mobile #datePickerModal { z-index: 990 !important; }
+body.is-mobile #confirmModal { z-index: 1000 !important; }
+body.is-mobile .toast-container { z-index: 1100; }
+body.is-mobile .modal-box { width: 100% !important; max-width: 100% !important; max-height: 86vh; border-radius: 22px; padding: 20px 16px; }
+body.is-mobile .stamp-adj-overlay { align-items: center; padding: 12px; }
+body.is-mobile .stamp-adj-card { max-width: 100% !important; border-radius: 22px; }
+
+/* Documents A4 (factures, fiches de sortie) : réduits pour tenir dans l'écran */
+body.is-mobile #a4Modal { align-items: stretch; }
+body.is-mobile .a4-modal-sheet { width: 100% !important; max-width: 100% !important; max-height: none; height: 100%; border-radius: 0; padding: calc(10px + env(safe-area-inset-top, 0px)) 10px calc(16px + env(safe-area-inset-bottom, 0px)); }
+/* Barre d'outils du document : les boutons d'action (Signer, Imprimer, WhatsApp, Télécharger, Fermer) sont
+   regroupés en grille tout en haut, toujours visibles ; les options (modèle, date...) passent dessous */
+body.is-mobile #a4PrintContainer { display: flex; flex-direction: column; }
+body.is-mobile #a4PrintContainer > .no-print { display: contents !important; }
+body.is-mobile #a4PrintContainer > .no-print > strong { order: 1; font-size: 12.5px; padding: 8px 0 2px; }
+body.is-mobile #a4PrintContainer > .no-print > div:last-child {
+  order: -1; position: sticky; top: calc(-10px - env(safe-area-inset-top, 0px)); z-index: 5; background: #fff;
+  display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 8px 0; border-bottom: 1px solid #e2e8f0; width: 100%;
+}
+body.is-mobile #a4PrintContainer > .no-print > div:last-child .btn {
+  width: 100%; min-width: 0; justify-content: center; text-align: center; white-space: normal; line-height: 1.15;
+  font-size: 12.5px; padding: 10px 6px !important; gap: 5px;
+}
+body.is-mobile #a4PrintContainer > .no-print > div:last-child .btn-primary { grid-column: span 2; }
+body.is-mobile #a4PrintContainer > .no-print > div:first-child:not(:last-child) {
+  order: 1; display: flex !important; flex-wrap: wrap !important; overflow: visible; gap: 6px !important; padding: 8px 0; width: 100%;
+}
+body.is-mobile #a4PrintContainer > .no-print > div:first-child:not(:last-child) input[type="text"] { width: 100% !important; }
+body.is-mobile #a4PrintContainer > .a4-multi-container, body.is-mobile #a4PrintContainer > .a4-printable-page { order: 2; margin-top: 8px; }
+/* Même largeur que sur Mac / PC (816 px) : le pied de page garde ses 2 lignes, à l'écran comme dans le PDF */
+body.is-mobile #a4PrintContainer > .a4-multi-container,
+body.is-mobile #a4PrintContainer > .a4-printable-page { width: 816px; min-width: 816px; max-width: none; }
+body.is-mobile:not(.pdf-capturing) #a4PrintContainer > .a4-multi-container,
+body.is-mobile:not(.pdf-capturing) #a4PrintContainer > .a4-printable-page { zoom: var(--m-a4-zoom, 0.45); }
+body.is-mobile.pdf-capturing #a4PrintContainer { overflow: visible; }
+
+/* Partage du PDF (WhatsApp...) depuis le téléphone */
+.m-share-actions { display: flex; flex-direction: column; gap: 10px; }
+.m-share-actions .btn { width: 100%; padding: 15px; font-size: 15px; border-radius: 16px; }
+
+/* ---------- TVA : option dans l'éditeur de facture (style ordinateur : voir ui-polish.css) ---------- */
+body.is-mobile .tva-ret-row { display: block !important; white-space: normal !important; }
+body.is-mobile .tva-ret-row input { width: 64px; }
+
+/* ---------- Balance : TVA à reverser à l'État ---------- */
+.m-tva-card { border-radius: 18px; border: 1px solid rgba(245,158,11,0.45); background: color-mix(in srgb, #f59e0b 10%, var(--bg-card)); padding: 14px 16px; margin-bottom: 16px; }
+.m-tva-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.m-tva-title { font-size: 15px; font-weight: 800; }
+.m-tva-note { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; line-height: 1.3; }
+.m-tva-total { font-size: 22px; font-weight: 800; color: #f59e0b; white-space: nowrap; }
+.m-tva-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border); }
+.m-tva-row:first-of-type { margin-top: 10px; }
+.m-tva-row .t { font-size: 14px; font-weight: 700; }
+.m-tva-row .s { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+.m-tva-btn { border: 1px solid #f59e0b; background: transparent; color: #f59e0b; border-radius: 10px; padding: 6px 10px; font-size: 12px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.m-tva-btn.done { border-color: var(--border); color: var(--text-muted); }
+
+/* ---------- Rubrique TVA ---------- */
+.m-tva-sums { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+.m-tva-sums strong { display: block; font-size: 14px; color: var(--text-main); margin-top: 2px; }
+.m-pills { display: flex; gap: 8px; margin: 0 0 12px; overflow-x: auto; scrollbar-width: none; }
+.m-pill { flex: 1; white-space: nowrap; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-muted); font-size: 13px; font-weight: 700; cursor: pointer; }
+.m-pill.active { background: var(--accent-btn); border-color: var(--accent-btn); color: #fff; }
+.m-tva-item { border-radius: 16px; border: 1px solid var(--border); background: var(--bg-card); padding: 12px 14px; margin-bottom: 10px; }
+.m-tva-item.paid { opacity: 0.85; }
+.m-tva-item-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.m-tva-item .t { font-size: 15px; font-weight: 800; }
+.m-tva-item .s { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+.m-tva-chip { font-size: 11px; font-weight: 800; padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+.m-tva-chip.due { background: rgba(245,158,11,0.18); color: #f59e0b; }
+.m-tva-chip.ok { background: rgba(34,197,94,0.18); color: #22c55e; }
+.m-tva-lines { margin-top: 10px; font-size: 12.5px; color: var(--text-muted); }
+.m-tva-lines > div { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; }
+.m-tva-lines b { color: var(--text-main); font-weight: 700; }
+.m-tva-lines .big { font-size: 14px; color: var(--text-main); border-top: 1px dashed var(--border); margin-top: 4px; padding-top: 7px; }
+.m-tva-lines .big b { font-size: 16px; color: #f59e0b; }
+.m-tva-item.paid .m-tva-lines .big b { color: #22c55e; }
+.m-tva-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.m-tva-actions .m-tva-btn { flex: 1; padding: 10px 8px; }
+.m-tva-btn.pay { background: #f59e0b; color: #1a1205; }
+
+/* ---------- Impression depuis le téléphone : uniquement le document, sans boutons ni barres ---------- */
+@media print {
+  body.is-mobile .m-header, body.is-mobile .m-tabbar, body.is-mobile .m-sheet-overlay, body.is-mobile .toast-container { display: none !important; }
+  html body.is-mobile #a4Modal #a4PrintContainer > .no-print, html body.is-mobile #a4Modal #a4PrintContainer > .no-print * { display: none !important; }
+  body.is-mobile #a4PrintContainer { display: block !important; position: static !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; }
+  body.is-mobile #a4PrintContainer > .a4-multi-container,
+  body.is-mobile #a4PrintContainer > .a4-printable-page { width: 100% !important; min-width: 0 !important; max-width: 100% !important; zoom: 1 !important; margin: 0 !important; }
+  body.is-mobile .a4-modal-sheet { height: auto !important; max-height: none !important; padding: 0 !important; overflow: visible !important; }
+}
+
+/* ---------- Fenêtres qui montent du bas : remontées pour ne pas être gênées par le filigrane en bas d'écran ---------- */
+body.is-mobile .modal-box { margin: 0; }
+body.is-mobile .stamp-adj-card { margin: 0; }
+body.is-mobile .m-sheet-panel { margin-bottom: var(--m-lift); border-radius: 22px; max-height: calc(88vh - var(--m-lift)); }
+body.is-mobile #a4Modal .a4-modal-sheet { margin-bottom: 0; }
+body.is-mobile #a4Modal { padding: 0; }
+
+/* ---------- Fenêtres de question (confirmation, « Le PDF est prêt »...) : au milieu de l'écran ---------- */
+.m-dialog-overlay { align-items: center; justify-content: center; padding: calc(12px + env(safe-area-inset-top, 0px)) 14px calc(12px + env(safe-area-inset-bottom, 0px)); }
+.m-dialog-overlay .m-sheet-panel { margin: 0 !important; max-width: 440px; border-radius: 22px; padding-bottom: 16px; max-height: 86vh; animation: mPop .2s cubic-bezier(.2,.8,.2,1); }
+.m-dialog-overlay .m-grabber { display: none; }
+@keyframes mPop { from { transform: scale(.94); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ---------- Recherche et fenêtres où l'on écrit : en haut de l'écran dès l'ouverture (le clavier ne les cache pas).
+   Elles ne bougent plus ensuite : une fenêtre qui se déplace sous le doigt pourrait se fermer toute seule. ---------- */
+body.is-mobile #searchModal,
+body.is-mobile .modal-overlay:not(#a4Modal):has(input[type=text], input[type=number], input[type=search], input[type=email], input[type=tel], input[type=password], input:not([type]), textarea),
+.m-dialog-overlay:has(input, textarea) { align-items: flex-start; padding-top: calc(14px + env(safe-area-inset-top, 0px)); }
+
+/* Impression : voir mobile.js (« Imprimer » fabrique le PDF A4 puis l'envoie à l'imprimante de l'iPhone) */
+
+/* TVA par année */
+.m-years .m-pill { flex: 0 0 auto; min-width: 64px; }
+.m-tva-recap { border-radius: 16px; border: 1px solid var(--border); background: var(--bg-card); padding: 12px 12px 6px; margin: 0 0 14px; }
+.m-tva-recap-grid { display: grid; grid-template-columns: 0.8fr 1.2fr 1.2fr 1.1fr 1.2fr; gap: 6px; align-items: center; padding: 8px 4px; border-top: 1px solid var(--border); font-size: 11.5px; cursor: pointer; }
+.m-tva-recap-grid span { text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-tva-recap-grid .due { color: #f59e0b; font-weight: 800; }
+.m-tva-recap-head { border-top: none; color: var(--text-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; cursor: default; white-space: normal; }
+.m-tva-recap-head span { white-space: normal; line-height: 1.15; }
+.m-tva-recap-grid.on { background: color-mix(in srgb, var(--accent-btn) 14%, transparent); border-radius: 10px; }
+
+/* Boutons TVA avec icônes de l'application */
+.m-tva-actions .m-tva-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-size: 13px; }
+.m-tva-btn svg { width: 17px; height: 17px; flex-shrink: 0; }
+.m-tva-btn.undo { border-color: var(--border); background: var(--bg-row); color: var(--text-main); }
+/* Fenêtre de confirmation au style de l'application */
+.m-dialog .m-dialog-text { font-size: 14px; color: var(--text-muted); line-height: 1.45; margin: -4px 0 16px; }
+.m-dialog-input { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.m-dialog-input input { flex: 1; font-size: 20px; font-weight: 800; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--border); background: var(--bg-row); color: var(--text-main); }
+.m-dialog-input span { font-size: 20px; font-weight: 800; color: var(--text-muted); }
+.m-dialog-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.m-dialog-btn { padding: 14px 10px; border-radius: 14px; border: 1px solid var(--border); background: var(--bg-row); color: var(--text-main); font-size: 15px; font-weight: 800; cursor: pointer; }
+.m-dialog-btn.ok { background: var(--accent-btn); border-color: var(--accent-btn); color: #fff; }
+.m-dialog-btn.ok.danger { background: #ef4444; border-color: #ef4444; }
+
+/* =========================================================================
+   v1.19 — nouvelles fonctionnalités sur téléphone
+   ========================================================================= */
+/* Les questions (mDialog) passent toujours au-dessus des fenêtres où l'on écrit */
+.m-dialog-overlay { z-index: 1010; }
+/* Carte « À encaisser » de l'écran Balance */
+.m-rcv-card { border-color: color-mix(in srgb, var(--c-blue) 45%, transparent); background: color-mix(in srgb, var(--c-blue) 9%, var(--bg-card)); }
+.m-rcv-card .m-tva-total { color: var(--c-blue); }
+/* Fenêtres de la v1.19 : pleine largeur, champs sur une colonne */
+body.is-mobile .dis-dialog .modal-box { padding: 18px 16px; }
+body.is-mobile .dis-grid-2 { grid-template-columns: 1fr; gap: 0; }
+body.is-mobile .dis-dlg-foot .btn { flex: 1; }
+body.is-mobile .fin-tabs { flex-wrap: nowrap; overflow-x: auto; margin-top: 0; }
+body.is-mobile .fin-tabs .time-pill { flex-shrink: 0; }
+body.is-mobile .rcv-foot { flex-direction: column; gap: 6px; }
+/* Onglets de l'ordinateur remplacés par les onglets du haut du téléphone */
+body.is-mobile .equip-tabs, body.is-mobile .prod-tabs { display: none; }
+/* Tableau de bord (Résumé) */
+body.is-mobile .dash-row { padding: 12px 0; }
+body.is-mobile .dash-txt b { font-size: 15px; }
+body.is-mobile .dash-txt span { font-size: 13px; }
+body.is-mobile .dash-due-row .btn { width: 100%; }
+/* Statistiques, rentabilité, journal, absences, réservations : une seule colonne */
+body.is-mobile .stats-grid { grid-template-columns: 1fr; }
+body.is-mobile .stat-type-row { grid-template-columns: minmax(0, 1.3fr) 0.9fr 1.1fr 0.6fr; font-size: 12px; }
+body.is-mobile .abs-row { grid-template-columns: 1fr auto; }
+body.is-mobile .abs-row > div:nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
+body.is-mobile .res-week { grid-template-columns: 1fr; }
+body.is-mobile .res-day { min-height: 0; flex-direction: row; flex-wrap: wrap; align-items: center; }
+body.is-mobile .res-day-head { width: 74px; flex-direction: column; margin: 0; }
+body.is-mobile .res-day-chip { flex: 1 1 160px; }
+body.is-mobile .res-day-empty { margin: 0; }
+body.is-mobile .rec-line { grid-template-columns: minmax(0, 1fr) 56px 96px 28px; }
+body.is-mobile .classify-row { grid-template-columns: 1fr; }
+body.is-mobile .cn-kind { grid-template-columns: 1fr; }
+body.is-mobile .calm-cell { min-height: 52px; padding: 4px; align-items: center; }
+body.is-mobile .calm-head, body.is-mobile .calm-grid { gap: 4px; }
+body.is-mobile .aud-filters .top-pill-select, body.is-mobile .aud-filters .form-input { flex: 1 1 140px; max-width: none !important; }
+body.is-mobile .mlog-row { flex-direction: column; align-items: stretch; }
+/* Dossiers (clients, projets d'un client) : 3 colonnes qui rétrécissent vraiment (plus de débordement à 375 px) */
+body.is-mobile .folders-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+body.is-mobile .folders-row > * { min-width: 0; }
+
+/* ---------- v1.20 : un seul défilement par écran, rien de caché sous la barre du bas ----------
+   Safari ignore la marge du bas d'une zone « flex » qui défile : on passe en bloc et on ajoute une cale en bas. */
+body.is-mobile .content-area { display: block; padding-bottom: 0; overscroll-behavior-y: contain; }
+body.is-mobile .content-area::after { content: ""; display: block; height: calc(var(--m-bottom) + 30px); }
+body.is-mobile .main-view, body.is-mobile .right-panel { overflow: visible; flex: none; height: auto; max-height: none; }
+/* Agenda : mois compact en haut, liste du jour dessous */
+body.is-mobile .calm-cell { min-height: 42px; padding: 3px 2px; gap: 2px; }
+body.is-mobile .calm-head, body.is-mobile .calm-grid { gap: 3px; }
+body.is-mobile .calm-num { width: 22px; height: 22px; font-size: 12.5px; }
+body.is-mobile .calm-legend { font-size: 11px; gap: 4px 10px; margin-bottom: 8px; }
+body.is-mobile .calm-legend i { width: 8px; height: 8px; }
