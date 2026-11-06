@@ -791,6 +791,18 @@
     .stat-bar > span { display: block; height: 100%; border-radius: 6px; background: var(--primary); }
     .stat-sub { font-size: 11px; color: var(--text-muted); }
     .stat-amount { font-size: 14px; font-weight: 800; }
+    .client-kind-switch { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 22px; border: 1px solid var(--border); border-radius: 999px; }
+    .client-kind-btn { display: inline-flex; align-items: center; gap: 7px; padding: 7px 16px; border: 0; border-radius: 999px; background: transparent; color: var(--text-muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .client-kind-btn.active { background: var(--primary); color: #ffffff; }
+    .kind-share { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--border); margin: 6px 0 4px; }
+    .kind-share span { display: block; height: 100%; }
+    .kind-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+    .kind-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+    .kind-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .kind-table th, .kind-table td { padding: 8px 6px; border-bottom: 1px dashed var(--border); text-align: right; white-space: nowrap; }
+    .kind-table th:first-child, .kind-table td:first-child { text-align: left; color: var(--text-muted); white-space: normal; }
+    .kind-table th { font-weight: 700; font-size: 12px; }
+    .kind-table-wrap { overflow-x: auto; }
     .stat-type-table { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; }
     .stat-type-row { display: grid; grid-template-columns: minmax(0, 1.4fr) 0.9fr 1.2fr 0.6fr; gap: 10px; font-size: 12.5px; padding: 6px 4px; border-bottom: 1px dashed var(--border); align-items: center; }
     .stat-type-row span:nth-child(2), .stat-type-row span:nth-child(4) { color: var(--text-muted); }
@@ -5730,7 +5742,7 @@
       main.innerHTML = `
         <div class="page-header">
           <div class="back-nav" onclick="navigate('home')"><span>‹</span> <span>Vos Clients (${state.clients.length})</span></div>
-          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">${state.clients.length > 1 ? digitSortHTML("clients", [["name_asc", "Nom (A à Z)"], ["name_desc", "Nom (Z à A)"], ["recent", "Plus récents"], ["docs", "Plus de documents"], ["amount", "Montant facturé"]], "name_asc") : ""}<button class="btn btn-gold" onclick="navigate('add-client')">+ Ajouter une entreprise</button></div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">${state.clients.length > 1 ? digitSortHTML("clients", [["name_asc", "Nom (A à Z)"], ["name_desc", "Nom (Z à A)"], ["recent", "Plus récents"], ["docs", "Plus de documents"], ["amount", "Montant facturé"]], "name_asc") : ""}<button class="btn btn-gold" onclick="navigate('add-client')">+ Ajouter un client</button></div>
         </div>
         ${state.clients.length === 0 ? `
           <div style="height:58vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; color:var(--text-muted);">
@@ -5747,7 +5759,7 @@
               const count = visibleProjects().filter(p => p.clientId === c.id).length;
               return `
                 <div class="folder-3d-item" onclick="navigate('client-detail', { clientId: '${c.id}' })">
-                  <div class="folder-3d-box"><div class="folder-papers"></div><div class="folder-front-glass"><div class="folder-mini-icon">${svgIcon("building", 18, "#ffffff")}</div><div class="folder-bottom-meta"><span>${count} Projet(s)</span><span>${c.country}</span></div></div></div>
+                  <div class="folder-3d-box"><div class="folder-papers"></div><div class="folder-front-glass"><div class="folder-mini-icon">${svgIcon(clientKind(c) === "PARTICULIER" ? "user" : "building", 18, "#ffffff")}</div><div class="folder-bottom-meta"><span>${count} Projet(s)</span><span>${clientKind(c) === "PARTICULIER" ? "Particulier" : "Entreprise"}</span></div></div></div>
                   <div class="folder-title">${c.name}</div>
                 </div>
               `;
@@ -5757,17 +5769,60 @@
       `;
     }
 
+    function clientKind(c) { return c && c.kind === "PARTICULIER" ? "PARTICULIER" : "ENTREPRISE"; }
+
+    function setClientFormKind(kind) {
+      const f = document.getElementById("clientForm");
+      if (!f) return;
+      f.dataset.kind = kind;
+      f.querySelectorAll(".client-kind-btn").forEach(b => b.classList.toggle("active", b.dataset.kind === kind));
+      f.querySelectorAll("[data-only]").forEach(el => {
+        const on = el.dataset.only === kind;
+        el.style.display = on ? "" : "none";
+        el.querySelectorAll("input,select").forEach(i => { i.disabled = !on; });
+      });
+      const t = document.getElementById("clientFormTitle");
+      if (t) t.textContent = kind === "PARTICULIER" ? "Information sur le particulier" : "Information sur l'entreprise";
+    }
+
     function renderAddClient(main, editId = null) {
       const ex = editId ? state.clients.find(c => c.id === editId) : null;
+      const kind = clientKind(ex);
+      const v = k => ex && ex[k] != null ? dEsc(String(ex[k])) : "";
       main.innerHTML = `
         <div class="page-header">
-          <div class="back-nav" onclick="navigate('clients-folders')"><span>‹</span> <span>${ex ? "Modifier l'entreprise" : "Ajouter une entreprise"}</span></div>
+          <div class="back-nav" onclick="navigate('clients-folders')"><span>‹</span> <span>${ex ? "Modifier le client" : "Ajouter un client"}</span></div>
         </div>
-        <form onsubmit="submitClientForm(event, '${ex ? ex.id : ''}')">
-          <div class="grid-2cols">
+        <form id="clientForm" data-kind="${kind}" onsubmit="submitClientForm(event, '${ex ? ex.id : ''}')">
+          <div class="client-kind-switch" role="radiogroup" aria-label="Type de client">
+            <button type="button" class="client-kind-btn" data-kind="ENTREPRISE" onclick="setClientFormKind('ENTREPRISE')">${svgIcon("building", 15)} <span>Entreprise</span></button>
+            <button type="button" class="client-kind-btn" data-kind="PARTICULIER" onclick="setClientFormKind('PARTICULIER')">${svgIcon("user", 15)} <span>Particulier</span></button>
+          </div>
+          <div class="grid-2cols" data-only="PARTICULIER">
+            <div>
+              <h3 style="font-size:15px; margin-bottom:18px;">Information sur le particulier</h3>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group"><label>Nom *</label><input type="text" id="fPLastName" class="form-input" required value="${v("lastName")}" /></div>
+                <div class="form-group"><label>Prénom</label><input type="text" id="fPFirstName" class="form-input" value="${v("firstName")}" /></div>
+              </div>
+              <div class="form-group"><label>Téléphone *</label><input type="text" id="fPPhone" class="form-input" required value="${kind === "PARTICULIER" ? v("contactPhone") : ""}" /></div>
+              <div class="form-group"><label>Email</label><input type="email" id="fPEmail" class="form-input" value="${kind === "PARTICULIER" ? v("email") : ""}" /></div>
+            </div>
+            <div>
+              <h3 style="font-size:15px; margin-bottom:18px;">Adresse</h3>
+              <div class="form-group"><label>Adresse *</label><input type="text" id="fPAddress" class="form-input" required value="${kind === "PARTICULIER" ? v("address") : ""}" /></div>
+              <div class="form-group"><label>Pays *</label><input type="text" id="fPCountry" class="form-input" required value="${kind === "PARTICULIER" && ex ? v("country") : "Mali"}" /></div>
+              <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:34px;">
+                <button type="button" class="btn btn-secondary" onclick="navigate('clients-folders')">Annuler</button>
+                <button type="submit" class="btn btn-gold">Enregistrer</button>
+              </div>
+            </div>
+          </div>
+          <div class="grid-2cols" data-only="ENTREPRISE">
             <div>
               <h3 style="font-size:15px; margin-bottom:18px;">Information sur l'entreprise</h3>
-              <div class="form-group"><label>Nom du client *</label><input type="text" id="fClientName" class="form-input" required value="${ex ? ex.name : ''}" /></div>
+              <div class="form-group"><label>Raison sociale *</label><input type="text" id="fClientName" class="form-input" required value="${ex ? ex.name : ''}" /></div>
+              <div class="form-group"><label>NIF / RCCM</label><input type="text" id="fClientNif" class="form-input" value="${v("nif")}" /></div>
               <div class="form-group"><label>Pays *</label><input type="text" id="fClientCountry" class="form-input" required value="${ex ? ex.country : 'Mali'}" /></div>
               <div class="form-group">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
@@ -5803,22 +5858,51 @@
           </div>
         </form>
       `;
+      setClientFormKind(kind);
     }
 
     function submitClientForm(e, editId) {
       e.preventDefault();
-      const obj = {
-        id: editId || "c" + Date.now(),
-        name: document.getElementById("fClientName").value.trim(),
-        country: document.getElementById("fClientCountry").value.trim(),
-        sector: document.getElementById("fClientSector").value.trim(),
-        email: document.getElementById("fClientEmail").value.trim(),
-        address: document.getElementById("fClientAddress").value.trim(),
-        contactName: document.getElementById("fContactName").value.trim(),
-        contactEmail: document.getElementById("fContactEmail").value.trim(),
-        contactRole: document.getElementById("fContactRole").value.trim(),
-        contactPhone: document.getElementById("fContactPhone").value.trim()
-      };
+      const val = id => document.getElementById(id).value.trim();
+      const kind = (document.getElementById("clientForm") || {}).dataset?.kind === "PARTICULIER" ? "PARTICULIER" : "ENTREPRISE";
+      const prev = editId ? (state.clients.find(x => x.id === editId) || {}) : {};
+      let obj;
+      if (kind === "PARTICULIER") {
+        const lastName = val("fPLastName"), firstName = val("fPFirstName");
+        obj = {
+          ...prev,
+          id: editId || "c" + Date.now(),
+          kind,
+          lastName, firstName,
+          name: [firstName, lastName].filter(Boolean).join(" "),
+          country: val("fPCountry"),
+          sector: prev.sector || "Particulier",
+          email: val("fPEmail"),
+          address: val("fPAddress"),
+          nif: "",
+          contactName: [firstName, lastName].filter(Boolean).join(" "),
+          contactEmail: val("fPEmail"),
+          contactRole: "",
+          contactPhone: val("fPPhone")
+        };
+      } else {
+        obj = {
+          ...prev,
+          id: editId || "c" + Date.now(),
+          kind,
+          name: val("fClientName"),
+          nif: val("fClientNif"),
+          country: val("fClientCountry"),
+          sector: val("fClientSector"),
+          email: val("fClientEmail"),
+          address: val("fClientAddress"),
+          contactName: val("fContactName"),
+          contactEmail: val("fContactEmail"),
+          contactRole: val("fContactRole"),
+          contactPhone: val("fContactPhone")
+        };
+        delete obj.firstName; delete obj.lastName;
+      }
       if (editId) { const i = state.clients.findIndex(x => x.id === editId); if (i > -1) state.clients[i] = obj; }
       else state.clients.unshift(obj);
       selectedClientId = obj.id;
@@ -12387,6 +12471,29 @@ ${lines}`;
       list.forEach(c => { c.share = total > 0 ? Math.round(Math.max(0, c.ht) / total * 1000) / 10 : 0; c.avg = c.count ? Math.round(c.ht / c.count) : 0; });
       return { list, total };
     }
+    // Entreprises / Particuliers / Devis flash (sans fiche client), à partir des stats par client
+    function computeKindStats(clientStats) {
+      const groups = {
+        ENTREPRISE: { label: "Entreprises", color: "var(--c-blue)", ht: 0, count: 0, clients: 0, paid: 0, rest: 0 },
+        PARTICULIER: { label: "Particuliers", color: "var(--c-violet)", ht: 0, count: 0, clients: 0, paid: 0, rest: 0 },
+        FLASH: { label: "Devis flash", color: "var(--c-amber)", ht: 0, count: 0, clients: 0, paid: 0, rest: 0 }
+      };
+      clientStats.list.forEach(c => {
+        let k = "FLASH";
+        if (String(c.key).startsWith("c:")) k = clientKind((state.clients || []).find(x => x.id === c.key.slice(2)));
+        const g = groups[k];
+        g.ht += c.ht; g.count += c.count; g.paid += c.paid; g.rest += c.rest;
+        if (c.count > 0) g.clients++;
+      });
+      const total = Object.values(groups).reduce((s, g) => s + Math.max(0, g.ht), 0);
+      Object.values(groups).forEach(g => {
+        g.share = total > 0 ? Math.round(Math.max(0, g.ht) / total * 1000) / 10 : 0;
+        g.avg = g.count ? Math.round(g.ht / g.count) : 0;
+        g.avgClient = g.clients ? Math.round(g.ht / g.clients) : 0;
+      });
+      const registered = (state.clients || []).reduce((r, c) => { r[clientKind(c)]++; return r; }, { ENTREPRISE: 0, PARTICULIER: 0 });
+      return { groups, total, registered };
+    }
     function computeTypeStats(year, month) {
       const map = new Map();
       const get = code => { const k = code || ""; if (!map.has(k)) map.set(k, { code: k, label: serviceTypeLabel(k), ht: 0, count: 0 }); return map.get(k); };
@@ -12457,6 +12564,35 @@ ${lines}`;
       const yearDelta = pctChange(yearTotal, prevSame);
       const top = C.list.slice(0, 10);
       const maxTop = Math.max(1, ...top.map(c => c.ht));
+      const K = computeKindStats(C);
+      const kCols = ["ENTREPRISE", "PARTICULIER"].concat(K.groups.FLASH.count ? ["FLASH"] : []).map(k => K.groups[k]);
+      const kE = K.groups.ENTREPRISE, kP = K.groups.PARTICULIER;
+      const kRow = (label, f) => `<tr><td>${label}</td>${kCols.map(g => `<td class="nowrap-amount">${f(g)}</td>`).join("")}</tr>`;
+      const kLead = kE.ht === kP.ht ? "" : (kE.ht > kP.ht
+        ? (kP.ht > 0 ? `Les entreprises rapportent ${H ? "plus" : (Math.round(kE.ht / kP.ht * 10) / 10).toString().replace(".", ",") + " fois plus"} que les particuliers.` : "Pour l'instant, aucun chiffre ne vient des particuliers.")
+        : (kE.ht > 0 ? `Les particuliers rapportent ${H ? "plus" : (Math.round(kP.ht / kE.ht * 10) / 10).toString().replace(".", ",") + " fois plus"} que les entreprises.` : "Pour l'instant, aucun chiffre ne vient des entreprises."));
+      const kindCard = `
+        <div class="card-container">
+          <div class="card-header"><h3 class="card-title">Entreprises et particuliers</h3><span class="dis-muted" style="font-size:12px;">${finPeriodLabel()} · hors TVA</span></div>
+          ${K.total <= 0 ? `<div class="dis-empty">Aucune facture validée sur cette période.</div>` : `
+            <div class="kind-legend">${kCols.map(g => `<span><i style="background:${g.color};"></i>${g.label} ${String(g.share).replace(".", ",")} %</span>`).join("")}</div>
+            <div class="kind-share ${H ? "fin-chart-masked" : ""}">${kCols.map(g => `<span style="width:${g.share}%; background:${g.color};"></span>`).join("")}</div>
+            ${kLead ? `<div class="fin-kpi-sub" style="margin:8px 0 12px;">${kLead}</div>` : ""}
+            <div class="kind-table-wrap"><table class="kind-table">
+              <thead><tr><th></th>${kCols.map(g => `<th style="color:${g.color};">${g.label}</th>`).join("")}</tr></thead>
+              <tbody>
+                ${kRow("Chiffre d'affaires", g => money(g.ht))}
+                ${kRow("Part du chiffre", g => String(g.share).replace(".", ",") + " %")}
+                ${kRow("Factures validées", g => g.count)}
+                ${kRow("Panier moyen par facture", g => money(g.avg))}
+                ${kRow("Clients actifs", g => g.clients)}
+                ${kRow("Chiffre moyen par client", g => money(g.avgClient))}
+                ${kRow("Déjà encaissé (TTC)", g => money(g.paid))}
+                ${kRow("Reste dû (TTC)", g => `<span class="${g.rest > 0 ? "pay-late" : ""}">${money(g.rest)}</span>`)}
+              </tbody>
+            </table></div>`}
+          <div class="fin-kpi-sub" style="margin-top:10px;">Fiches clients enregistrées : ${dPlural(K.registered.ENTREPRISE, "entreprise")} · ${dPlural(K.registered.PARTICULIER, "particulier")}${K.groups.FLASH.count ? " · les devis flash n'ont pas de fiche client" : ""}</div>
+        </div>`;
 
       main.innerHTML = `
         ${finPageHeaderHTML("Vos meilleurs clients, ce qui rapporte le plus et les mois forts de l'année.")}
@@ -12486,6 +12622,8 @@ ${lines}`;
             <div class="fin-kpi-sub">dont ${newClients} nouveau${newClients > 1 ? "x" : ""} sur la période</div>
           </div>
         </div>
+
+        ${kindCard}
 
         <div class="stats-grid">
           <div class="card-container" style="margin-bottom:0;">
