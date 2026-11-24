@@ -809,4 +809,35 @@
   // La page a parfois été dessinée avant le chargement de la version téléphone (base locale très rapide) :
   // on la redessine pour avoir les onglets du haut et la mise en page du téléphone
   try { if (getCurrentAccount() && currentView) navigate(currentView); } catch (e) {}
+
+  /* v1.33 : les gros montants ne sortent plus de leur cadre : la taille du texte se réduit juste assez */
+  const FIT_SEL = ".m-balance-value, .m-balance-bottom strong, .m-tva-total, .m-sheet-card .r .t, .fin-kpi-value, .nowrap-amount, .dis-kpi-value";
+  function fitAmounts() {
+    document.querySelectorAll(".m-balance-bottom.m-stack").forEach(b => b.classList.remove("m-stack"));
+    fitList();
+    // Ligne « Factures validées / Dépenses / En attente » : si un montant ne tient toujours pas, les trois passent l'un sous l'autre
+    let again = false;
+    document.querySelectorAll(".m-balance-bottom").forEach(b => {
+      if ([...b.querySelectorAll("strong")].some(s => s.scrollWidth > s.clientWidth + 1)) { b.classList.add("m-stack"); again = true; }
+    });
+    if (again) fitList();
+  }
+  function fitList() {
+    document.querySelectorAll(FIT_SEL).forEach(el => {
+      el.style.fontSize = "";
+      if (!el.clientWidth) return;
+      let fs = parseFloat(getComputedStyle(el).fontSize) || 16;
+      const min = Math.max(10, Math.round(fs * 0.5));
+      let guard = 40;
+      while (el.scrollWidth > el.clientWidth + 1 && fs > min && guard--) { fs -= 1; el.style.fontSize = fs + "px"; }
+    });
+  }
+  let fitQueued = false;
+  const queueFit = () => { if (fitQueued) return; fitQueued = true; requestAnimationFrame(() => { fitQueued = false; try { fitAmounts(); } catch (e) {} }); };
+  try {
+    const mv = document.getElementById("mainView");
+    if (mv) new MutationObserver(queueFit).observe(mv, { childList: true, subtree: true, characterData: true });
+    window.addEventListener("resize", queueFit);
+    queueFit();
+  } catch (e) {}
 })();

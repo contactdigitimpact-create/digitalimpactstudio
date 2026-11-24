@@ -960,6 +960,12 @@
     .digit-sort { position:relative; display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 12px; border:1px solid var(--border); border-radius:999px; background:var(--bg-card); color:var(--text-muted); cursor:pointer; flex:0 0 auto; max-width:100%; }
     .digit-sort select { appearance:none; -webkit-appearance:none; border:0; background:transparent; color:var(--text-main); font:inherit; font-size:13px; font-weight:600; padding:0 2px; cursor:pointer; outline:none; max-width:190px; text-overflow:ellipsis; }
     .digit-sort:focus-within { border-color:var(--primary); }
+    .qty-stepper { display:inline-flex; align-items:center; border:1px solid var(--border); border-radius:999px; background:var(--bg-input); overflow:hidden; }
+    .qty-step-btn { width:34px; height:32px; border:0; background:transparent; color:var(--text-main); display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
+    .qty-step-btn:hover:not(:disabled) { background:var(--bg-card-hover); }
+    .qty-step-btn:disabled { opacity:.35; cursor:default; }
+    .qty-step-val { min-width:30px; text-align:center; font-weight:800; font-size:14px; }
+    .eq-log-summary summary::-webkit-details-marker { display:none; }
     .my-week-days { display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; }
     .my-week-day { display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 0 7px; border-radius:10px; border:1px solid var(--border); background:var(--bg-row); color:var(--text-muted); cursor:pointer; font:inherit; }
     .my-week-day .mw-d { font-size:11px; }
@@ -1430,7 +1436,7 @@
   </div>
 
   <!-- MODALE : GESTION DES TEMPLATES DE LOGOS CLIENTS (COMPACTE) -->
-  <div class="modal-overlay" id="clientLogoTemplatesModal" style="z-index:290 !important;">
+  <div class="modal-overlay" id="clientLogoTemplatesModal" style="z-index:990 !important;">
     <div class="modal-box" style="width:440px; padding:16px 18px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <div>
@@ -1460,7 +1466,7 @@
   </div>
 
   <!-- MODALE : GESTION DES SECTEURS D'ACTIVITÉ (ADMIN) -->
-  <div class="modal-overlay" id="sectorTemplatesModal" style="z-index:290 !important;">
+  <div class="modal-overlay" id="sectorTemplatesModal" style="z-index:990 !important;">
     <div class="modal-box" style="width:520px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
         <div>
@@ -3767,6 +3773,7 @@
                 </div>
               </div>
               <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                ${canGrantProjectDelay() ? `<button type="button" class="btn btn-secondary" style="padding:7px 12px; font-size:11.5px;" onclick="openGrantDelayDialog('PROJECT', '${p.id}')">${svgIcon("calendar", 13)} <span>Nouveau délai</span></button>` : ""}
                 <button type="button" class="btn btn-secondary" style="padding:7px 12px; font-size:11.5px;" onclick="notifyOverdueAssigneeNow('${p.id}')">
                   ${svgIcon("bell", 13, "#fde047")} <span>Relancer</span>
                 </button>
@@ -3884,6 +3891,7 @@
       const allRelevantNotifs = (state.notifications || []).filter(n => {
         if (!acc) return false;
         const myNameLower = (acc.name || "").trim().toLowerCase();
+        if (n.read) return false; // v1.33 : une notification lue ne reste plus dans la cloche
         if ((n.fromName || "").trim().toLowerCase() === myNameLower) return false;
         return (n.targetAccountName || "").trim().toLowerCase() === myNameLower;
       });
@@ -3917,7 +3925,7 @@
         ` : ''}
 
         ${allRelevantNotifs.length === 0 ? `
-          <div style="padding:30px; text-align:center; color:var(--text-muted); font-size:13px;">Aucune notification dans l'historique.</div>
+          <div style="padding:30px; text-align:center; color:var(--text-muted); font-size:13px;">Aucune nouvelle notification.</div>
         ` : allRelevantNotifs.map(n => {
           const isEquip = n.category === "EQUIP" || n.navTarget === "equip-checkout";
           const isExpense = n.category === "EXPENSE";
@@ -4829,7 +4837,7 @@
                           return `<span class="inline-date-badge" style="${isOvd ? 'border-color:#ef4444; background:rgba(239,68,68,0.16); color:#fca5a5;' : ''}" onclick="event.stopPropagation(); openEditProdProjectDate('${pp.id}', 'deliveryDate', 'Date de livraison prévue')" title="Cliquer pour changer la date de livraison">
                             ${svgIcon("calendar", 13, isOvd ? "#ef4444" : "#2dd4bf")}
                             <span>Livraison prévue : <strong>${pp.deliveryDate ? formatYMDToFRDisplay(pp.deliveryDate) : 'Choisir'}</strong>${isOvd ? ' • DÉLAI DÉPASSÉ (' + calcDaysOverdue(pp.deliveryDate) + 'j)' : ''}</span>
-                          </span>`;
+                          </span>${isOvd && canGrantProjectDelay() ? `<button type="button" class="pay-link" style="font-size:11.5px;" onclick="event.stopPropagation(); openGrantDelayDialog('PROJECT', '${pp.id}')">Accorder un nouveau délai</button>` : ''}${(pp.delayHistory || []).length ? `<span style="font-size:11px; color:var(--text-muted);" title="${dEsc(pp.delayHistory.map(h => `${dFr(h.from)} vers ${dFr(h.to)} (${h.by}${h.reason ? ' : ' + h.reason : ''})`).join(' ; '))}">${dPlural(pp.delayHistory.length, 'délai accordé', 'délais accordés')}</span>` : ''}`;
                         })()}
                       </div>
 
@@ -5738,6 +5746,25 @@
       navigate("quote-editor", { projectId: nf.id, isFlash: true });
     }
 
+    // v1.33 : suppression d'un client (Administrateur et Directeur général), vers la corbeille (restaurable)
+    function canDeleteClient() { return roleIs("ADMIN", "PDG"); }
+    async function deleteClientToTrash(clientId) {
+      if (!canDeleteClient()) return showToast("Réservé à l'Administrateur et au Directeur général.", true);
+      const idx = (state.clients || []).findIndex(c => c.id === clientId);
+      if (idx < 0) return;
+      const c = state.clients[idx];
+      const docs = (state.projects || []).filter(p => p.clientId === c.id).length;
+      const msg = docs ? `Ce client a ${docs} document${docs > 1 ? "s" : ""} (proformas, factures). Ces documents sont gardés tels quels. Le client va dans la corbeille : il pourra être restauré.` : "Le client va dans la corbeille : il pourra être restauré.";
+      if (!(await digitConfirm(`Supprimer le client « ${c.name} » ?`, msg, { yes: "Supprimer", danger: true }))) return;
+      state.clients.splice(idx, 1);
+      c._trashType = "CLIENT"; c._deletedAt = new Date().toLocaleDateString("fr-FR"); c._updatedAt = Date.now();
+      state.trash.unshift(c);
+      auditLog("CLIENT_DELETE", `Client supprimé : ${c.name}`, "CLIENT", c.id);
+      saveState(); showToast("Client déplacé dans la corbeille.");
+      document.querySelectorAll(".context-dropdown-menu.open").forEach(m => m.classList.remove("open"));
+      if (currentView === "client-detail" || currentView === "add-client") navigate("clients-folders"); else rerenderCurrentView();
+    }
+
     function renderAllClientFolders(main) {
       main.innerHTML = `
         <div class="page-header">
@@ -5759,6 +5786,14 @@
               const count = visibleProjects().filter(p => p.clientId === c.id).length;
               return `
                 <div class="folder-3d-item" onclick="navigate('client-detail', { clientId: '${c.id}' })">
+                  ${canDeleteClient() ? `<div style="position:absolute; top:8px; right:8px; z-index:20;" onclick="event.stopPropagation();">
+                    <button type="button" class="three-dots-btn" style="width:26px; height:26px; background:rgba(0,0,0,0.45); color:#fff; border-color:rgba(255,255,255,0.25);" onclick="toggleContextMenu('clientMenu_${c.id}', event)" title="Options">${svgIcon("dots", 14, "#ffffff")}</button>
+                    <div class="context-dropdown-menu" id="clientMenu_${c.id}">
+                      <button type="button" class="context-menu-item" onclick="navigate('client-detail', { clientId: '${c.id}' })">${svgIcon("eye", 14)} <span>Ouvrir</span></button>
+                      <button type="button" class="context-menu-item" onclick="navigate('add-client', { editClientId: '${c.id}' })">${svgIcon("edit", 14)} <span>Modifier</span></button>
+                      <button type="button" class="context-menu-item danger" onclick="deleteClientToTrash('${c.id}')">${svgIcon("trash", 14, "#ef4444")} <span>Supprimer</span></button>
+                    </div>
+                  </div>` : ""}
                   <div class="folder-3d-box"><div class="folder-papers"></div><div class="folder-front-glass"><div class="folder-mini-icon">${svgIcon(clientKind(c) === "PARTICULIER" ? "user" : "building", 18, "#ffffff")}</div><div class="folder-bottom-meta"><span>${count} Projet(s)</span><span>${clientKind(c) === "PARTICULIER" ? "Particulier" : "Entreprise"}</span></div></div></div>
                   <div class="folder-title">${c.name}</div>
                 </div>
@@ -6005,6 +6040,7 @@
         <button class="btn btn-secondary btn-full" onclick="navigate('add-client', { editClientId: '${client.id}' })">
           ${svgIcon("edit", 14)} <span>Modifier l'entreprise</span>
         </button>
+        ${canDeleteClient() ? `<button class="btn btn-secondary btn-full" style="margin-top:8px; color:#ef4444;" onclick="deleteClientToTrash('${client.id}')">${svgIcon("trash", 14, "#ef4444")} <span>Supprimer le client</span></button>` : ""}
         ${recurringBlockHTML(client)}
       `;
     }
@@ -6632,30 +6668,41 @@
       return "La Direction";
     }
 
+    // v1.33 : taille du cadre du cachet, choisie par personne (Ajuster le cachet)
+    const STAMP_BOX_SIZES = { S: [150, 92], M: [195, 120], L: [245, 150], XL: [295, 182], XXL: [350, 216] };
+    // v1.33 : empreinte courte d'une image de cachet (sert à reconnaître une ancienne version retouchée depuis)
+    function stampKey(u) { u = String(u || ""); return u.length + ":" + u.slice(-48); }
     function buildStampHTML(proj = null) {
       let customStamp = "";
       let stampTf = "";
-      if (proj && proj.signerAccountId) {
-        const accAdj = (state.accounts || []).find(a => a.id === proj.signerAccountId);
-        const ad = accAdj && accAdj.stampAdjust;
-        if (ad) stampTf = `transform: translate(${Number(ad.x) || 0}px, ${Number(ad.y) || 0}px) scale(${(Number(ad.s) || 100) / 100}) rotate(${Number(ad.r) || 0}deg); transform-origin: center;`;
-      }
+      let stampBox = STAMP_BOX_SIZES.M;
+      let ad = null;
+      const sigs = state.signatures || [];
+      const accAdj = proj && proj.signerAccountId ? (state.accounts || []).find(a => a.id === proj.signerAccountId) : null;
       if (proj && proj.signerStampDataUrl) {
         customStamp = proj.signerStampDataUrl;
-      } else if (proj && proj.signerAccountId) {
-        const acc = (state.accounts || []).find(a => a.id === proj.signerAccountId);
-        if (acc && acc.signatureDataUrl) customStamp = acc.signatureDataUrl;
+        // Cachet retouché après la signature du document : la nouvelle version remplace l'ancienne copie
+        const k = stampKey(customStamp);
+        if (accAdj && accAdj.signatureDataUrl && (accAdj.stampOldKeys || []).includes(k)) customStamp = accAdj.signatureDataUrl;
+        else { const lib = sigs.find(x => (x.oldKeys || []).includes(k)); if (lib && lib.dataUrl) customStamp = lib.dataUrl; }
+      } else if (accAdj && accAdj.signatureDataUrl) {
+        customStamp = accAdj.signatureDataUrl;
       }
+      if (customStamp) { const lib = sigs.find(x => x.dataUrl === customStamp); if (lib && lib.adjust) ad = lib.adjust; }
+      if (!ad && accAdj) ad = accAdj.stampAdjust;
       if (!customStamp) {
         const roleTitle = getProjectSignerRoleLabel(proj).toLowerCase();
-        const matchedSig = (state.signatures || []).find(s => (s.posteTitle || s.title || "").toLowerCase() === roleTitle);
-        if (matchedSig && matchedSig.dataUrl) customStamp = matchedSig.dataUrl;
+        const matchedSig = sigs.find(s => (s.posteTitle || s.title || "").toLowerCase() === roleTitle);
+        if (matchedSig && matchedSig.dataUrl) { customStamp = matchedSig.dataUrl; ad = matchedSig.adjust || ad; }
       }
       if (!customStamp && state.companyInfo.customStampDataUrl) {
         customStamp = state.companyInfo.customStampDataUrl;
+        const lib = sigs.find(x => x.dataUrl === customStamp); if (lib && lib.adjust) ad = lib.adjust;
       }
+      if (ad && STAMP_BOX_SIZES[ad.box]) stampBox = STAMP_BOX_SIZES[ad.box];
+      if (ad) stampTf = `transform: translate(${Number(ad.x) || 0}px, ${Number(ad.y) || 0}px) scale(${(Number(ad.s) || 100) / 100}) rotate(${Number(ad.r) || 0}deg); transform-origin: center;`;
       if (customStamp) {
-        return `<div style="width:195px; height:120px; display:flex; align-items:center; justify-content:center; overflow:hidden; margin:0 auto;"><img src="${customStamp}" style="max-width:100% !important; max-height:100% !important; width:auto !important; height:auto !important; object-fit:contain !important; display:block; ${stampTf}" /></div>`;
+        return `<div style="width:${stampBox[0]}px; height:${stampBox[1]}px; display:flex; align-items:center; justify-content:center; overflow:hidden; margin:0 auto;"><img src="${customStamp}" style="max-width:100% !important; max-height:100% !important; width:auto !important; height:auto !important; object-fit:contain !important; display:block; ${stampTf}" /></div>`;
       }
       return `
         <svg width="200" height="128" viewBox="0 0 260 170" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(-4deg);">
@@ -7321,7 +7368,7 @@
                     <button class="btn btn-secondary" style="${canManage ? '' : 'flex:1;'} padding:7px 11px; font-size:12px;" onclick="openEquipmentQRCodesSheetModal('${eq.id}')" title="Imprimer / Exporter l'étiquette Code QR">
                       ${svgIcon("qr", 13, "#2dd4bf")} <span>${canManage ? 'QR' : 'Voir / Exporter Code QR'}</span>
                     </button>
-                    ${canManage ? `
+                    ${canDeleteEquipment(eq) ? `
                       <button class="btn btn-secondary" style="padding:7px 12px; font-size:12px; color:#ef4444;" onclick="deleteEquipment('${eq.id}')">
                         ${svgIcon("trash", 13, "#ef4444")}
                       </button>
@@ -7492,6 +7539,8 @@
         conditionBreakdown,
         code: document.getElementById("eqCode").value.trim() || ("DIS-MAT-" + Date.now().toString().slice(-4)),
         photoData: document.getElementById("eqPhotoData").value,
+        createdById: existing ? (existing.createdById || "") : (state.currentUserId || ""),
+        createdByName: existing ? (existing.createdByName || "") : ((getCurrentAccount() || {}).name || ""),
         _updatedAt: Date.now()
       };
       if (editId) { const i = state.equipments.findIndex(x => x.id === editId); if (i > -1) state.equipments[i] = obj; }
@@ -7502,13 +7551,21 @@
       if (currentView === "equip-inventory") renderEquipmentInventory(document.getElementById("mainView"));
       else if (currentView === "equip-checkout") renderEquipmentCheckout(document.getElementById("mainView"), document.getElementById("rightPanel"));
     }
+    // v1.33 : l'Administrateur supprime tout ; le Responsable seulement le matériel qu'il a lui-même enregistré
+    function canDeleteEquipment(eq) {
+      const r = getCurrentRole();
+      if (r === "ADMIN") return true;
+      return r === "RESPONSABLE" && !!eq && !!eq.createdById && eq.createdById === state.currentUserId;
+    }
     function deleteEquipment(id) {
+      if (!canDeleteEquipment((state.equipments || []).find(x => x.id === id))) return showToast("Vous pouvez supprimer seulement le matériel que vous avez enregistré.", true);
       openConfirmModal("Supprimer ce matériel", "Voulez-vous déplacer cet appareil du parc matériel vers la corbeille ?", () => {
         const idx = state.equipments.findIndex(x => x.id === id);
         if (idx > -1) {
           const item = state.equipments.splice(idx, 1)[0];
           item._trashType = "EQUIPMENT";
           item._deletedAt = new Date().toLocaleDateString("fr-FR");
+          item._updatedAt = Date.now();
           state.trash.unshift(item);
           saveState();
           showToast("Appareil déplacé dans la corbeille.");
@@ -7542,9 +7599,72 @@
       });
     }
 
+    /* ===== V1.33 : Sortie matériel - boutons moins / plus, filtres et bilans ===== */
+    let checkoutCatFilter = "";
+    let equipLogFilter = { y: "", m: "", who: "" };
+    const QTY_MINUS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg>';
+    const QTY_PLUS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+    function qtyStepperHTML(id, q, max) {
+      return `<div class="qty-stepper" onclick="event.stopPropagation();"><button type="button" class="qty-step-btn" ${q <= 0 ? "disabled" : ""} onclick="stepCartQty('${id}', -1, ${max})" aria-label="Retirer un">${QTY_MINUS}</button><span class="qty-step-val">${q}</span><button type="button" class="qty-step-btn" ${q >= max ? "disabled" : ""} onclick="stepCartQty('${id}', 1, ${max})" aria-label="Ajouter un">${QTY_PLUS}</button></div>`;
+    }
+    function stepCartQty(id, d, max) {
+      const q = Math.max(0, Math.min(Number(max) || 1, (Number(checkoutCart[id]) || 0) + d));
+      if (q > 0) checkoutCart[id] = q; else delete checkoutCart[id];
+      const y = window.scrollY, mv = document.getElementById("mainView"), st = mv ? mv.scrollTop : 0;
+      renderEquipmentCheckout(document.getElementById("mainView"), document.getElementById("rightPanel"));
+      if (mv) mv.scrollTop = st; window.scrollTo(0, y);
+    }
+    // Date d'une fiche de sortie : « JJ/MM/AAAA HH:MM », sinon l'heure lue dans l'identifiant
+    function equipLogYM(l) {
+      const m = String(l && l.dateOut || "").match(/(\d{2})\/(\d{2})\/(\d{4})/);
+      if (m) return { y: m[3], m: m[2] };
+      const ts = Number(String(l && l.id || "").replace(/\D/g, "").slice(0, 13));
+      if (!ts) return { y: "", m: "" };
+      const d = new Date(ts); return { y: String(d.getFullYear()), m: String(d.getMonth() + 1).padStart(2, "0") };
+    }
+    function equipLogsFiltered() {
+      const f = equipLogFilter;
+      return (state.equipmentLogs || []).filter(l => {
+        const d = equipLogYM(l);
+        if (f.y && d.y !== f.y) return false;
+        if (f.m && d.m !== f.m) return false;
+        if (f.who && (l.employeeName || "") !== f.who) return false;
+        return true;
+      });
+    }
+    function setEquipLogFilter(k, v) { equipLogFilter[k] = v; rerenderCurrentView(); }
+    function equipLogsFilterHTML() {
+      const logs = state.equipmentLogs || [];
+      const years = [...new Set(logs.map(l => equipLogYM(l).y).filter(Boolean))].sort().reverse();
+      const people = [...new Set(logs.map(l => l.employeeName).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr"));
+      const MOIS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+      const sel = (k, all, opts) => `<label class="digit-sort">${svgIcon(k === "who" ? "user" : "calendar", 15)}<select onchange="setEquipLogFilter('${k}', this.value)"><option value="">${all}</option>${opts.map(([v, l]) => `<option value="${dEsc(v)}" ${v === equipLogFilter[k] ? "selected" : ""}>${dEsc(l)}</option>`).join("")}</select></label>`;
+      return `<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">${sel("y", "Toutes les années", years.map(y => [y, y]))}${sel("m", "Tous les mois", MOIS.map((l, i) => [String(i + 1).padStart(2, "0"), l]))}${sel("who", "Toutes les personnes", people.map(p => [p, p]))}`;
+    }
+    // Bilan : nombre de sorties et d'appareils, et classement par personne (replié)
+    function equipLogsSummaryHTML(logs) {
+      const units = l => (l.items || []).reduce((t, x) => t + (Number(x.qty) || 1), 0);
+      const by = {};
+      logs.forEach(l => { const k = l.employeeName || "Sans nom"; by[k] = by[k] || { n: 0, u: 0 }; by[k].n++; by[k].u += units(l); });
+      const rows = Object.entries(by).sort((a, b) => b[1].n - a[1].n || a[0].localeCompare(b[0], "fr"));
+      const total = logs.reduce((t, l) => t + units(l), 0);
+      return `<details class="eq-log-summary" style="margin:-4px 0 14px; border:1px solid var(--border); border-radius:10px; padding:10px 14px; background:var(--bg-row);">
+        <summary style="cursor:pointer; font-size:13px; font-weight:700; list-style:none; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;"><span>${logs.length} sortie${logs.length > 1 ? "s" : ""} · ${total} appareil${total > 1 ? "s" : ""}</span><span style="color:var(--text-muted); font-weight:600; font-size:12px;">Bilan par personne</span></summary>
+        <div style="margin-top:10px; display:grid; gap:6px;">${rows.map(([name, v], i) => `<div style="display:flex; justify-content:space-between; gap:10px; font-size:12.5px; padding:6px 0; border-top:${i ? "1px solid var(--border)" : "0"};"><span style="font-weight:700;">${i + 1}. ${dEsc(name)}</span><span style="color:var(--text-muted);">${v.n} sortie${v.n > 1 ? "s" : ""} · ${v.u} appareil${v.u > 1 ? "s" : ""}</span></div>`).join("") || '<div style="color:var(--text-muted); font-size:12.5px;">Aucune sortie.</div>'}</div>
+      </details>`;
+    }
+
     /* ----- SORTIE MATÉRIEL AVEC PHOTOS DES APPAREILS & COULEURS D'ÉTAT PARTOUT ----- */
     function renderEquipmentCheckout(main, right) {
       const availableEquips = state.equipments.filter(e => (Number(e.totalQty) || 1) - (Number(e.outQty) || 0) > 0);
+      const eqAvail = e => (Number(e.totalQty) || 1) - (Number(e.outQty) || 0);
+      const eqCats = [...new Set(availableEquips.map(e => e.category).filter(Boolean))].sort((x, y) => x.localeCompare(y, "fr"));
+      if (checkoutCatFilter && !eqCats.includes(checkoutCatFilter)) checkoutCatFilter = "";
+      const shownEquips = digitSortList("checkoutEq", availableEquips.filter(e => !checkoutCatFilter || e.category === checkoutCatFilter), {
+        cat: (x, y) => String(x.category || "").localeCompare(String(y.category || ""), "fr") || String(x.name || "").localeCompare(String(y.name || ""), "fr"),
+        name: dsTxt(x => x.name), name_desc: dsTxt(x => x.name, -1), avail: dsNum(eqAvail), avail_low: dsNum(eqAvail, 1)
+      }, "cat");
+      const logsShown = equipLogsFiltered();
       const selectedKeys = Object.keys(checkoutCart).filter(k => checkoutCart[k] > 0);
       const selectedCount = selectedKeys.length;
       const currentAcc = getCurrentAccount();
@@ -7574,7 +7694,7 @@
         <!-- 1. Cocher le matériel à prendre (MODE MINIATURES COMPACTES OU GRANDES CARTES) -->
         <div class="card-container" style="padding:18px 20px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
-            <h2 class="card-title" style="margin-bottom:0;">1. Sélectionner les appareils pour la sortie (${availableEquips.length})</h2>
+            <h2 class="card-title" style="margin-bottom:0;">1. Sélectionner les appareils pour la sortie (${shownEquips.length})</h2>
             <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
               <div class="size-slider-wrap" title="Glisser pour réduire en miniature ou agrandir les cartes">
                 <span style="color:var(--text-muted);">Taille :</span>
@@ -7590,6 +7710,10 @@
               </button>
             </div>
           </div>
+          ${availableEquips.length > 1 ? `<div style="display:flex; gap:8px; flex-wrap:wrap; margin:-4px 0 14px;">
+            ${eqCats.length > 1 ? `<label class="digit-sort" title="Filtrer par catégorie">${svgIcon("folder", 15)}<select aria-label="Catégorie" onchange="checkoutCatFilter=this.value; rerenderCurrentView()"><option value="">Toutes les catégories</option>${eqCats.map(c => `<option value="${dEsc(c)}" ${c === checkoutCatFilter ? "selected" : ""}>${dEsc(c)}</option>`).join("")}</select></label>` : ""}
+            ${digitSortHTML("checkoutEq", [["cat", "Catégorie"], ["name", "Nom (A à Z)"], ["name_desc", "Nom (Z à A)"], ["avail", "Plus disponibles"], ["avail_low", "Moins disponibles"]], "cat")}
+          </div>` : ""}
           ${availableEquips.length === 0 ? `
             <div style="padding:28px 20px; text-align:center; color:var(--text-muted);">
               <p style="margin-bottom:14px;">Aucun matériel disponible en stock pour le moment.</p>
@@ -7602,7 +7726,7 @@
             </div>
           ` : checkoutViewMode === "mini" ? `
             <div class="equip-mini-grid">
-              ${availableEquips.map(eq => {
+              ${shownEquips.map(eq => {
                 const avail = (Number(eq.totalQty) || 1) - (Number(eq.outQty) || 0);
                 const picked = checkoutCart[eq.id] || 0;
                 const isChecked = picked > 0;
@@ -7624,20 +7748,17 @@
                         </div>
                       </div>
                     </div>
-                    ${isChecked ? `
-                      <div onclick="event.stopPropagation();" style="display:flex; justify-content:space-between; align-items:center; padding-top:6px; border-top:1px solid var(--border); font-size:11px;">
-                        <span style="font-weight:700; color:#2dd4bf;">Qté :</span>
-                        <input type="number" min="1" max="${avail}" value="${picked}" class="form-input" style="width:62px; padding:2px 6px; height:26px; text-align:center; font-weight:700; font-size:12px;"
-                          oninput="checkoutCart['${eq.id}']=Math.max(1,Math.min(${avail},Number(this.value)||1)); renderEquipmentCheckout(document.getElementById('mainView'), document.getElementById('rightPanel'));" />
+                    <div onclick="event.stopPropagation();" style="display:flex; justify-content:space-between; align-items:center; padding-top:6px; border-top:1px solid var(--border); font-size:11px;">
+                        <span style="font-weight:700; color:${picked ? '#2dd4bf' : 'var(--text-muted)'};">Qté :</span>
+                        ${qtyStepperHTML(eq.id, picked, avail)}
                       </div>
-                    ` : ''}
                   </div>
                 `;
               }).join('')}
             </div>
           ` : `
             <div class="equip-grid" id="checkoutEquipGrid" style="grid-template-columns: repeat(auto-fill, minmax(${checkoutCardSize}px, 1fr));">
-              ${availableEquips.map(eq => {
+              ${shownEquips.map(eq => {
                 const avail = (Number(eq.totalQty) || 1) - (Number(eq.outQty) || 0);
                 const picked = checkoutCart[eq.id] || 0;
                 const isChecked = picked > 0;
@@ -7672,13 +7793,10 @@
                       </div>
                     </div>
 
-                    ${isChecked ? `
-                      <div onclick="event.stopPropagation();" style="margin-top:10px; padding-top:8px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; font-size:12.5px;">
-                        <span style="font-weight:700; color:#2dd4bf;">Quantité prise :</span>
-                        <input type="number" min="1" max="${avail}" value="${picked}" class="form-input" style="width:75px; padding:4px 8px; text-align:center; font-weight:700;"
-                          oninput="checkoutCart['${eq.id}']=Math.max(1,Math.min(${avail},Number(this.value)||1)); renderEquipmentCheckout(document.getElementById('mainView'), document.getElementById('rightPanel'));" />
+                    <div onclick="event.stopPropagation();" style="margin-top:10px; padding-top:8px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; font-size:12.5px;">
+                        <span style="font-weight:700; color:${picked ? '#2dd4bf' : 'var(--text-muted)'};">Quantité prise :</span>
+                        ${qtyStepperHTML(eq.id, picked, avail)}
                       </div>
-                    ` : ''}
                   </div>
                 `;
               }).join('')}
@@ -7688,10 +7806,11 @@
 
         <!-- 2. Fiches de Sortie & Confirmation des Retours (Avec Photos & Couleur d'état) -->
         <div class="card-container">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px;"><h2 class="card-title" style="margin:0;">2. Fiches de Sortie & Confirmation des Retours</h2>${state.equipmentLogs.length > 1 ? digitSortHTML("logs", [["recent", "Plus récentes"], ["old", "Plus anciennes"], ["open", "Non rendues d'abord"], ["who", "Personne (A à Z)"]], "open") : ""}</div>
-          ${state.equipmentLogs.length === 0 ? `<div style="padding:30px; text-align:center; color:var(--text-muted);">Aucune sortie enregistrée.</div>` : `
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px;"><h2 class="card-title" style="margin:0;">2. Fiches de Sortie & Confirmation des Retours</h2>${state.equipmentLogs.length > 1 ? equipLogsFilterHTML() + digitSortHTML("logs", [["recent", "Plus récentes"], ["old", "Plus anciennes"], ["open", "Non rendues d'abord"], ["who", "Personne (A à Z)"]], "open") + "</div>" : ""}</div>
+          ${state.equipmentLogs.length > 1 ? equipLogsSummaryHTML(logsShown) : ""}
+          ${state.equipmentLogs.length === 0 ? `<div style="padding:30px; text-align:center; color:var(--text-muted);">Aucune sortie enregistrée.</div>` : logsShown.length === 0 ? `<div style="padding:30px; text-align:center; color:var(--text-muted);">Aucune sortie pour ce choix.</div>` : `
             <div class="pill-table-body">
-              ${digitSortList("logs", state.equipmentLogs, {
+              ${digitSortList("logs", logsShown, {
                 recent: dsNum(l => Number(String(l.id).replace(/\D/g, "").slice(0, 13)) || 0), old: dsNum(l => Number(String(l.id).replace(/\D/g, "").slice(0, 13)) || 0, 1),
                 open: (a, b) => (a.status === "RETURNED" ? 1 : 0) - (b.status === "RETURNED" ? 1 : 0), who: dsTxt(l => l.employeeName || l.accountName)
               }, "open").map(log => {
@@ -8751,6 +8870,7 @@ ${lines}`;
                       <button class="btn ${isAct ? 'btn-teal' : 'btn-secondary'}" style="flex:1; padding:8px;" onclick="activateSignatureFromLibrary('${sig.id}')">
                         ${isAct ? 'Active' : 'Activer'}
                       </button>
+                      <button class="btn btn-secondary" style="padding:8px 12px;" onclick="openLibraryStampAdjust('${sig.id}')" title="Agrandir, recadrer, adoucir">${svgIcon("sliders", 14)} <span>Ajuster</span></button>
                       <button class="btn btn-secondary" style="padding:8px 12px; color:#ef4444;" onclick="deleteSignatureFromLibrary('${sig.id}')" title="Supprimer">${svgIcon("trash", 14, "#ef4444")}</button>
                     </div>
                   </div>
@@ -9891,6 +10011,21 @@ ${lines}`;
                 <div class="form-group"><label>Lien du Groupe WhatsApp de l'entreprise</label><input type="text" id="cpWaLink" class="form-input" placeholder="https://chat.whatsapp.com/..." value="${state.whatsappGroupLink || ''}" /></div>
               </div>
             </div>
+            ${roleIs("ADMIN") ? `
+            <div style="margin-top:6px; padding-top:14px; border-top:1px solid var(--border);">
+              <div style="font-size:13px; font-weight:700; margin-bottom:4px;">Mentions légales et bas de page</div>
+              <div style="font-size:11.5px; color:var(--text-muted); margin-bottom:10px;">Écrites telles qu'elles apparaissent en bas des factures et proformas. Modifiables par l'Administrateur uniquement.</div>
+              <div class="grid-2cols">
+                <div>
+                  <div class="form-group"><label>NIF</label><input type="text" id="cpNif" class="form-input" placeholder="NIF : ..." value="${dEsc(info.nif || '')}" /></div>
+                  <div class="form-group"><label>RCCM</label><input type="text" id="cpRccm" class="form-input" placeholder="RCCM : ..." value="${dEsc(info.rccm || '')}" /></div>
+                </div>
+                <div>
+                  <div class="form-group"><label>Site web</label><input type="text" id="cpWebsite" class="form-input" value="${dEsc(info.website || '')}" /></div>
+                  <div class="form-group"><label>Phrase du bas de page</label><input type="text" id="cpFooterNote" class="form-input" placeholder="Merci de votre confiance." value="${dEsc(info.footerNote || '')}" /></div>
+                </div>
+              </div>
+            </div>` : ""}
             <div style="display:flex; justify-content:flex-end; margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
               <button type="submit" class="btn btn-primary">${svgIcon("save", 15)} <span>Enregistrer dans la base de données</span></button>
             </div>
@@ -9910,6 +10045,13 @@ ${lines}`;
       state.companyInfo.bankAccount = document.getElementById("cpBankAccount").value.trim();
       state.companyInfo.mobileMoney = document.getElementById("cpMobileMoney").value.trim();
       state.whatsappGroupLink = document.getElementById("cpWaLink").value.trim();
+      if (roleIs("ADMIN") && document.getElementById("cpNif")) {
+        state.companyInfo.nif = document.getElementById("cpNif").value.trim();
+        state.companyInfo.rccm = document.getElementById("cpRccm").value.trim();
+        state.companyInfo.website = document.getElementById("cpWebsite").value.trim();
+        state.companyInfo.footerNote = document.getElementById("cpFooterNote").value.trim();
+        auditLog("COMPANY_LEGAL_UPDATE", "Mentions légales et bas de page modifiés", "SETTINGS", "companyInfo");
+      }
       saveState();
       showToast("Coordonnées enregistrées dans la base de données !");
     }
@@ -10613,6 +10755,7 @@ ${lines}`;
       RESERVATION: { coll: "equipmentReservations", badge: "Réservation", title: it => `${it.projectName || "Réservation"} — ${it.employeeName || ""}`, sub: it => `Du ${dFr(it.startDate)} au ${dFr(it.endDate)}` },
       MAINTENANCE: { coll: "maintenanceLogs", badge: "Entretien", title: it => `${it.equipmentName || "Appareil"} — ${it.description || ""}`, sub: it => `${dFr(it.date)} • ${it.type || ""}` },
       ABSENCE: { coll: "absences", badge: "Absence", title: it => `${it.name || "Absence"}`, sub: it => `Du ${dFr(it.startDate)} au ${dFr(it.endDate)}` },
+      CLIENT: { coll: "clients", badge: "Client", title: it => it.name || "Client", sub: it => clientKind(it) === "PARTICULIER" ? "Particulier" : "Entreprise" },
       CAL_EVENT: { coll: "calendarEvents", badge: "Événement", title: it => it.title || "Événement", sub: it => `Le ${dFr(it.date)}` }
     };
     function getTrashItemMeta(item) {
@@ -10731,7 +10874,7 @@ ${lines}`;
         const m = String(n && n.id || "").match(/(\d{12,})/);
         if (!m) return true;
         const age = now - Number(m[1]);
-        return n.read ? age < 30 * DAY : age < 60 * DAY;   // lues : 30 jours ; non lues : 60 jours
+        return age < 30 * DAY;   // v1.33 : toute notification est effacée au bout de 30 jours
       });
       return before - state.notifications.length;
     }
@@ -11723,8 +11866,9 @@ ${lines}`;
           ${s.cn.count > 0 ? `<div class="pay-note">Avoirs déduits : − ${formatFCFA(s.cn.netRecu)} FCFA</div>` : ""}
           <div class="pay-due">
             <span>Échéance : <b>${dFr(s.due)}</b>${s.daysLate > 0 ? ` · <span class="pay-late">${dPlural(s.daysLate, "jour")} de retard</span>` : ""}</span>
-            ${canEdit ? `<button type="button" class="pay-link" onclick="editInvoiceDueDate('${id}', ${fl})">Modifier</button>` : ""}
+            <span style="display:inline-flex; gap:10px; flex-wrap:wrap;">${canEdit && s.daysLate > 0 && s.rest > 0 ? `<button type="button" class="pay-link" onclick="openGrantDelayDialog('INVOICE', '${id}', ${fl})">Accorder un nouveau délai</button>` : ""}${canEdit ? `<button type="button" class="pay-link" onclick="editInvoiceDueDate('${id}', ${fl})">Modifier</button>` : ""}</span>
           </div>
+          ${delayHistoryHTML(p)}
           ${s.payments.length ? `
             <div class="pay-list">
               ${s.payments.map(py => `
@@ -11756,6 +11900,45 @@ ${lines}`;
       const n = Number(p.reminderCount) || 0;
       if (!n) return "";
       return `Relancée ${n === 1 ? "1 fois" : n + " fois"}${p.lastReminderAt ? ", la dernière le " + dFr(p.lastReminderAt) : ""}${p.lastReminderBy ? " par " + dEsc(p.lastReminderBy) : ""}`;
+    }
+
+    /* ===== V1.33 : accorder un nouveau délai (facture impayée échue ou projet en retard), avec historique ===== */
+    function canGrantProjectDelay() { return roleIs("ADMIN", "PDG", "RESPONSABLE"); }
+    function delayHistoryHTML(obj) {
+      const h = (obj && obj.delayHistory) || [];
+      if (!h.length) return "";
+      return `<div class="pay-note" style="margin-top:6px;">${h.slice().reverse().map(x => `Nouveau délai accordé le ${dFr(x.at)} par ${dEsc(x.by || "")} : du ${dFr(x.from)} au ${dFr(x.to)}${x.reason ? " — " + dEsc(x.reason) : ""}`).join("<br/>")}</div>`;
+    }
+    function openGrantDelayDialog(kind, id, isFlash) {
+      const isInv = kind === "INVOICE";
+      const obj = isInv ? findInvoice(id, isFlash) : (state.prodProjects || []).find(x => x.id === id);
+      if (!obj) return;
+      if (isInv ? !canManagePayments() : !canGrantProjectDelay()) return showToast("Votre compte ne peut pas accorder de délai ici.", true);
+      const from = isInv ? invoiceDueYMD(obj) : (parseAnyDateToYMD(obj.deliveryDate || "") || "");
+      const proposal = dAddDays(dToday() > from ? dToday() : from, isInv ? 15 : 7);
+      digitOpenDialog({
+        id: "grantDelayDialog", title: "Accorder un nouveau délai", width: 460,
+        sub: `${isInv ? "Facture " + formatDocNumber(obj) : "Projet « " + dEsc(obj.title || "") + " »"} — ${isInv ? "échéance" : "livraison prévue"} actuelle : ${from ? dFr(from) : "aucune"}.`,
+        okLabel: "Accorder le délai",
+        body: `<div class="form-group"><label>Nouvelle date ${isInv ? "d'échéance" : "de livraison"}</label>${dDateFieldHTML("gdDate", proposal, "Nouvelle date")}</div>
+          <div class="form-group" style="margin-bottom:0;"><label>Motif (facultatif)</label><input type="text" id="gdReason" class="form-input" maxlength="160" placeholder="${isInv ? "Ex. : le client paiera après réception de son budget" : "Ex. : attente des images du client"}" /></div>`,
+        onOk: () => {
+          const to = document.getElementById("gdDate").value;
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(to)) { showToast("Choisissez la nouvelle date.", true); return false; }
+          if (to <= dToday()) { showToast("La nouvelle date doit être après aujourd'hui.", true); return false; }
+          const acc = getCurrentAccount() || {};
+          const entry = { from, to, at: dToday(), by: acc.name || "", byId: acc.id || "", reason: document.getElementById("gdReason").value.trim().slice(0, 160) };
+          obj.delayHistory = [...(obj.delayHistory || []), entry];
+          if (isInv) { obj.dueDate = to; obj.lateNotifiedAt = null; } else obj.deliveryDate = to;
+          obj._updatedAt = Date.now();
+          auditLog(isInv ? "INVOICE_DELAY" : "PROJECT_DELAY", `Nouveau délai accordé — ${isInv ? "facture " + formatDocNumber(obj) : "projet " + (obj.title || "")} : du ${dFr(from)} au ${dFr(to)}${entry.reason ? " (" + entry.reason + ")" : ""}`, isInv ? "INVOICE" : "PROJECT", obj.id);
+          saveState();
+          showToast(`Nouveau délai accordé jusqu'au ${dFr(to)}.`);
+          if (!isInv) { try { const m = document.getElementById("overdueModal"); if (m && m.classList.contains("open") && typeof openOverdueProjectsModal === "function") openOverdueProjectsModal(); } catch (e) {} }
+          rerenderCurrentView();
+          return true;
+        }
+      });
     }
 
     function editInvoiceDueDate(invoiceId, isFlash) {
@@ -11906,7 +12089,7 @@ ${lines}`;
         changed = true;
         // Retard ancien (factures d'avant le suivi des paiements) : repère posé sans alerte, pour ne pas envoyer des dizaines de notifications
         if (s.daysLate > 7) return;
-        const key = "invlate_" + p.id;
+        const key = "invlate_" + p.id + ((p.delayHistory || []).length ? "_" + s.due : "");   // v1.33 : nouvelle alerte si le nouveau délai est dépassé
         if ((state.notifications || []).some(n => n && n.invoiceLateKey === key)) return;
         const client = invoiceClientLabel(p, isFlash);
         targets.forEach(t => state.notifications.unshift({
@@ -12055,6 +12238,7 @@ ${lines}`;
                 <option value="ALL">Tous les clients</option>
                 ${clients.map(c => `<option value="${dEsc(c)}" ${rcvClient === c ? "selected" : ""}>${dEsc(c)}</option>`).join("")}
               </select>
+              ${shown.length > 1 ? digitSortHTML("rcv", [["late", "Retards d'abord"], ["rest", "Plus gros reste"], ["rest_low", "Plus petit reste"], ["due", "Échéance proche"], ["client", "Client (A à Z)"]], "late") : ""}
             </div>
           </div>
           ${shown.length === 0 ? `
@@ -12063,7 +12247,7 @@ ${lines}`;
             </div>` : `
             <div class="rcv-list">
               <div class="rcv-head"><div>Client et facture</div><div>Échéance</div><div class="r">Attendu</div><div>Encaissé</div><div class="r">Reste</div><div>Statut</div><div class="r">Actions</div></div>
-              ${shown.map(e => receivableRowHTML(e, H)).join("")}
+              ${digitSortList("rcv", shown, { late: () => 0, rest: dsNum(e => e.s.rest), rest_low: dsNum(e => e.s.rest, 1), due: dsTxt(e => e.s.due), client: dsTxt(e => e.client) }, "late").map(e => receivableRowHTML(e, H)).join("")}
             </div>
             <div class="rcv-foot">
               <span>Total attendu : <b class="nowrap-amount">${money(TS.expected)}</b></span>
@@ -12522,6 +12706,34 @@ ${lines}`;
     }
 
     /* ----- Onglet « Statistiques » ----- */
+    // v1.33 : nombre de tournages par personne sur la période (projets de production dont la date de tournage
+    // tombe dans la période ; la personne compte si elle est assignée à l'étape « Tournage », sinon à la 1re étape)
+    function shootCountsByPerson(Y, M) {
+      const by = {};
+      (state.prodProjects || []).forEach(p => {
+        const d = p.shootDate ? (parseAnyDateToYMD(p.shootDate) || "") : "";
+        if (!dInPeriod(d, Y, M)) return;
+        let idx = (p.stages || []).findIndex(s => /tournage|shooting/i.test(String(s)));
+        if (idx < 0) idx = 0;
+        new Set(getStageAssigneesArray(p, idx)).forEach(n => { by[n] = by[n] || { n: 0, projects: [] }; by[n].n++; by[n].projects.push(p.title || "Projet"); });
+      });
+      return Object.entries(by).sort((a, b) => b[1].n - a[1].n || a[0].localeCompare(b[0], "fr"));
+    }
+    function shootStatsCardHTML(Y, M) {
+      const rows = shootCountsByPerson(Y, M);
+      const max = rows.length ? rows[0][1].n : 0;
+      return `
+        <div class="card-container">
+          <div class="card-header"><h3 class="card-title">Tournages par personne</h3><span class="dis-muted" style="font-size:12px;">${finPeriodLabel()} · selon la date de tournage</span></div>
+          ${rows.length === 0 ? `<div class="dis-empty">Aucun tournage sur cette période.</div>` : `
+            <div style="display:grid; gap:8px;">${rows.map(([name, v], i) => `
+              <div style="display:grid; grid-template-columns: minmax(0, 1fr) auto; gap:4px 12px; align-items:center;" title="${dEsc(v.projects.join(", "))}">
+                <span style="font-size:13px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${i + 1}. ${dEsc(name)}</span>
+                <span style="font-size:12.5px; color:var(--text-muted); white-space:nowrap;">${dPlural(v.n, "tournage")}</span>
+                <div style="grid-column:1 / -1; height:6px; border-radius:6px; background:var(--bg-row); overflow:hidden;"><div style="height:100%; width:${Math.max(4, Math.round(v.n / max * 100))}%; background:var(--c-teal); border-radius:6px;"></div></div>
+              </div>`).join("")}</div>`}
+        </div>`;
+    }
     function renderStatsTab(main) {
       const H = finAmountsHidden;
       const money = v => dMoney(v, H);
@@ -12624,6 +12836,8 @@ ${lines}`;
         </div>
 
         ${kindCard}
+
+        ${shootStatsCardHTML(Y, M)}
 
         <div class="stats-grid">
           <div class="card-container" style="margin-bottom:0;">
@@ -13770,6 +13984,95 @@ ${lines}`;
       }
       return "";
     }
+    /* ===== V1.33 : export complet en vrai fichier Excel (.xlsx), sans bibliothèque ajoutée ===== */
+    function exportRowsOf(kind, Y, M) {
+      let out = null; const orig = buildCsv;
+      buildCsv = (h, r) => { out = [h, ...r]; return ""; };
+      try { buildExportCsv(kind, Y, M); } finally { buildCsv = orig; }
+      return out || [];
+    }
+    function xlsxCrc32(bytes) {
+      let c, crc = -1;
+      if (!xlsxCrc32.T) { xlsxCrc32.T = []; for (let n = 0; n < 256; n++) { c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; xlsxCrc32.T[n] = c >>> 0; } }
+      for (let i = 0; i < bytes.length; i++) crc = (crc >>> 8) ^ xlsxCrc32.T[(crc ^ bytes[i]) & 0xFF];
+      return (crc ^ -1) >>> 0;
+    }
+    // Petit fichier zip « stocké » (sans compression) : suffisant et lisible par Excel, Numbers et LibreOffice
+    function xlsxZip(files) {
+      const enc = new TextEncoder(), parts = [], central = [];
+      let offset = 0;
+      const u16 = n => [n & 255, (n >>> 8) & 255], u32 = n => [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255];
+      files.forEach(f => {
+        const name = enc.encode(f.name), data = enc.encode(f.data), crc = xlsxCrc32(data);
+        const head = [...u32(0x04034b50), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21), ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(name.length), ...u16(0)];
+        parts.push(new Uint8Array(head), name, data);
+        central.push(new Uint8Array([...u32(0x02014b50), ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21), ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(name.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(offset)]), name);
+        offset += head.length + name.length + data.length;
+      });
+      const cdSize = central.reduce((s, x) => s + x.length, 0);
+      const end = new Uint8Array([...u32(0x06054b50), ...u16(0), ...u16(0), ...u16(files.length), ...u16(files.length), ...u32(cdSize), ...u32(offset), ...u16(0)]);
+      return new Blob([...parts, ...central, end], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    }
+    function xlsxBlob(sheets) {
+      const x = s => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
+      const col = i => { let s = ""; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+      const used = new Set();
+      const names = sheets.map(s => { let n = String(s.name).replace(/[\[\]:*?\/\\]/g, " ").slice(0, 31) || "Feuille"; let k = n, i = 2; while (used.has(k)) k = n.slice(0, 28) + " " + i++; used.add(k); return k; });
+      const files = [
+        { name: "[Content_Types].xml", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((s, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}</Types>` },
+        { name: "_rels/.rels", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
+        { name: "xl/workbook.xml", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${names.map((n, i) => `<sheet name="${x(n)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join("")}</sheets></workbook>` },
+        { name: "xl/_rels/workbook.xml.rels", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join("")}<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
+        { name: "xl/styles.xml", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF1F5F9"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="3"><xf/><xf fontId="1" fillId="2" applyFont="1" applyFill="1"/><xf numFmtId="164" applyNumberFormat="1"/></cellXfs></styleSheet>` }
+      ];
+      sheets.forEach((s, si) => {
+        const rows = s.rows.length ? s.rows : [["Aucune donnée"]];
+        const widths = [];
+        rows.forEach(r => r.forEach((v, i) => { widths[i] = Math.min(50, Math.max(widths[i] || 8, String(v == null ? "" : v).length + 2)); }));
+        const body = rows.map((r, ri) => `<row r="${ri + 1}">${r.map((v, ci) => {
+          const ref = col(ci) + (ri + 1);
+          if (ri > 0 && typeof v === "number" && isFinite(v)) return `<c r="${ref}" s="${Number.isInteger(v) && Math.abs(v) >= 1000 ? 2 : 0}"><v>${v}</v></c>`;
+          return `<c r="${ref}" t="inlineStr"${ri === 0 ? ' s="1"' : ""}><is><t xml:space="preserve">${x(v)}</t></is></c>`;
+        }).join("")}</row>`).join("");
+        files.push({ name: `xl/worksheets/sheet${si + 1}.xml`, data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join("")}</cols><sheetData>${body}</sheetData></worksheet>` });
+      });
+      return xlsxZip(files);
+    }
+    function exportAllSheets(Y, M) {
+      const inP = v => dInPeriod(v, Y, M);
+      const sheets = Object.keys(EXPORT_KINDS).map(k => ({ name: EXPORT_KINDS[k], rows: exportRowsOf(k, Y, M) }));
+      const docCount = id => (state.projects || []).filter(p => p.clientId === id).length;
+      sheets.push({ name: "Clients", rows: [["Nom", "Type", "Contact", "Téléphone", "Email", "Adresse", "NIF / RCCM", "Secteur", "Documents"],
+        ...(state.clients || []).slice().sort((a, b) => String(a.name).localeCompare(String(b.name), "fr")).map(c => [c.name || "", clientKind(c) === "PARTICULIER" ? "Particulier" : "Entreprise", c.contactName || "", c.contactPhone || "", c.contactEmail || c.email || "", c.address || "", c.nif || "", c.sector || "", docCount(c.id)])] });
+      sheets.push({ name: "Matériel", rows: [["Appareil", "Catégorie", "Référence", "Quantité totale", "Sortis", "Disponibles", "État"],
+        ...(state.equipments || []).map(e => { const tot = Number(e.totalQty) || 1, out = Number(e.outQty) || 0; return [e.name || "", e.category || "", e.code || "", tot, out, tot - out, e.condition || ""]; })] });
+      sheets.push({ name: "Sorties matériel", rows: [["N° de sortie", "Date de sortie", "Personne", "Projet", "Appareils", "Nombre d'appareils", "Statut", "Retour prévu", "Date de retour"],
+        ...(state.equipmentLogs || []).filter(l => { const d = equipLogYM(l); return Y === "ALL" || (d.y === Y && (M === "ALL" || d.m === M)); }).map(l => [formatCheckoutNumber(l), l.dateOut || "", l.employeeName || "", l.projectName || "", (l.items || []).map(i => `${i.qty} x ${i.name}`).join(", "), (l.items || []).reduce((s, i) => s + (Number(i.qty) || 1), 0), l.status === "RETURNED" ? "Rendu" : l.status === "PENDING_ADMIN" ? "Retour à confirmer" : "Sorti", l.expectedReturnDate ? dFr(l.expectedReturnDate) : "", l.dateReturn || ""])] });
+      sheets.push({ name: "Projets de production", rows: [["Projet", "Type", "Client", "Date de tournage", "Date de livraison", "Étape actuelle", "Équipe"],
+        ...(state.prodProjects || []).filter(p => Y === "ALL" || inP(parseAnyDateToYMD(p.shootDate || "") || "")).map(p => { const team = new Set(); (p.stages || []).forEach((s, i) => getStageAssigneesArray(p, i).forEach(n => team.add(n))); const cl = (state.clients || []).find(c => c.id === p.clientId); return [p.title || "", p.typeName || p.type || "", (cl && cl.name) || p.clientName || "", p.shootDate ? dFr(parseAnyDateToYMD(p.shootDate)) : "", p.deliveryDate ? dFr(parseAnyDateToYMD(p.deliveryDate)) : "", (p.stages || [])[p.currentStageIndex] || "", [...team].join(", ")]; })] });
+      sheets.push({ name: "Tournages par personne", rows: [["Personne", "Nombre de tournages", "Projets"], ...shootCountsByPerson(Y, M).map(([n, v]) => [n, v.n, v.projects.join(", ")])] });
+      sheets.push({ name: "Personnel", rows: [["Nom", "Rôle", "Poste", "Téléphone", "Email"], ...(state.accounts || []).map(a => [a.name || "", getRoleLabel(a.accountType), a.jobTitle || a.posteTitle || "", a.phone || "", a.email || ""])] });
+      sheets.push({ name: "Réservations", rows: [["Projet", "Personne", "Du", "Au", "Matériel", "Statut"], ...(state.equipmentReservations || []).filter(r => Y === "ALL" || inP(r.startDate)).map(r => [r.projectName || "", r.employeeName || "", dFr(r.startDate), dFr(r.endDate), reservationItemsText(r), r.status === "CANCELLED" ? "Annulée" : r.status === "CHECKED_OUT" ? "Sortie faite" : "Réservée"])] });
+      sheets.push({ name: "Absences", rows: [["Personne", "Type", "Du", "Au", "Note"], ...(state.absences || []).filter(a => Y === "ALL" || inP(a.startDate)).map(a => [a.name || "", a.type || "", dFr(a.startDate), dFr(a.endDate), a.note || ""])] });
+      return sheets;
+    }
+    async function exportAllXlsx(Y = "ALL", M = "ALL") {
+      if (!roleIs("ADMIN")) return showToast("L'export complet est réservé à l'Administrateur.", true);
+      const sheets = exportAllSheets(Y, M);
+      const blob = xlsxBlob(sheets);
+      const name = `Digit-Impact-Toutes-les-donnees-${Y === "ALL" ? "toutes-annees" : Y}${M !== "ALL" ? "-" + M : ""}-${dToday()}.xlsx`;
+      const D = window.digitDesktop || {};
+      let done = false;
+      if (D.saveExportFile) {
+        try { const res = await D.saveExportFile(name, new Uint8Array(await blob.arrayBuffer())); if (res && res.ok) { showToast(`Fichier Excel enregistré dans « ${res.folderLabel} » : ${res.name}`); done = true; } } catch (e) { console.error(e); }
+      }
+      if (!done) {
+        if (window.DIGIT_IS_PHONE) showFileShareSheet(new File([blob], name, { type: blob.type }), name);
+        else { digitDownloadBlob(blob, name); showToast(`Fichier « ${name} » téléchargé.`); }
+      }
+      auditLog("DB_EXPORT_XLSX", `Export Excel complet (${Y === "ALL" ? "toutes les années" : Y}${M !== "ALL" ? " — " + FRENCH_MONTHS[Number(M) - 1] : ""}, ${sheets.length} onglets)`, "DATABASE", "");
+      saveState({ debounceCloud: true });
+    }
     function openExportDialog() {
       if (!canSeeFinanceSynthesis()) return showToast("L'export est réservé à l'Administrateur, au Directeur général et au Comptable.", true);
       const years = finYearOptions();
@@ -13778,7 +14081,8 @@ ${lines}`;
         sub: "Fichier CSV (séparateur point-virgule) qui s'ouvre directement dans Excel, avec les accents.",
         okLabel: "Exporter",
         body: `
-          <div class="export-kinds">${Object.keys(EXPORT_KINDS).map((k, i) => `<label class="cn-kind-opt"><input type="radio" name="expKind" value="${k}" ${i === 0 ? "checked" : ""} /> <span><b>${EXPORT_KINDS[k]}</b></span></label>`).join("")}</div>
+          ${roleIs("ADMIN") ? `<label class="cn-kind-opt" style="margin-bottom:8px;"><input type="radio" name="expKind" value="TOUT" checked /> <span><b>Toutes les données (fichier Excel .xlsx)</b> — un onglet par sujet : factures, paiements, dépenses, TVA, avoirs, clients, matériel, sorties, projets, personnel, réservations, absences</span></label>` : ""}
+          <div class="export-kinds">${Object.keys(EXPORT_KINDS).map((k, i) => `<label class="cn-kind-opt"><input type="radio" name="expKind" value="${k}" ${i === 0 && !roleIs("ADMIN") ? "checked" : ""} /> <span><b>${EXPORT_KINDS[k]}</b></span></label>`).join("")}</div>
           <div class="dis-grid-2" style="margin-top:12px;">
             <div class="form-group"><label>Année</label><select id="expYear" class="form-input"><option value="ALL">Toutes les années</option>${years.map(y => `<option value="${y}" ${finYearFilter === y ? "selected" : ""}>${y}</option>`).join("")}</select></div>
             <div class="form-group"><label>Mois</label><select id="expMonth" class="form-input"><option value="ALL">Toute l'année</option>${FRENCH_MONTHS.map((n, i) => `<option value="${dPad(i + 1)}" ${finMonthFilter === dPad(i + 1) ? "selected" : ""}>${n}</option>`).join("")}</select></div>
@@ -13786,6 +14090,7 @@ ${lines}`;
         onOk: async (ov) => {
           const kind = (ov.querySelector('input[name="expKind"]:checked') || {}).value || "FACTURES";
           const Y = document.getElementById("expYear").value, M = document.getElementById("expMonth").value;
+          if (kind === "TOUT") { await exportAllXlsx(Y, M); return true; }
           const csv = buildExportCsv(kind, Y, M);
           const lines = csv.split("\r\n").filter(Boolean).length - 1;
           const name = `Digit-Impact-${EXPORT_KINDS[kind].normalize("NFD").replace(/[̀-ͯ]/g, "")}-${Y === "ALL" ? "toutes-annees" : Y}${M !== "ALL" ? "-" + M : ""}.csv`;
@@ -13898,6 +14203,7 @@ ${lines}`;
             <div id="bkInfo" style="font-size:12.5px; line-height:1.7; margin-bottom:12px;">Lecture des sauvegardes...</div>
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
               <button type="button" class="btn btn-teal" onclick="runDatabaseBackup(false)">${svgIcon("save", 15)} <span>Sauvegarder maintenant</span></button>
+              ${roleIs("ADMIN") ? `<button type="button" class="btn btn-secondary" onclick="exportAllXlsx()">${svgIcon("download", 15)} <span>Tout exporter pour Excel</span></button>` : ""}
               <button type="button" class="btn btn-secondary" onclick="backupFolderAction('open')">${svgIcon("folder", 15)} <span>Ouvrir le dossier</span></button>
               <button type="button" class="btn btn-secondary" onclick="backupFolderAction('choose')">${svgIcon("folder", 15)} <span>Changer de dossier</span></button>
               <button type="button" class="btn btn-secondary" id="bkResetBtn" style="display:none;" onclick="backupFolderAction('reset')">Dossier par défaut</button>
@@ -14882,6 +15188,69 @@ ${lines}`;
       aiSave(id, c, `Connecteur IA : code supprimé pour ${k.name}`);
     }
     /* ===== V1.21 — FIN ===== */
+
+    /* ===== V1.33 — DÉBUT : retour / avance (boutons latéraux de la souris, Alt + flèches, Cmd + [ ]) ===== */
+    (function () {
+      const back = [], fwd = [];
+      let cur = null, moving = false;
+      const orig = navigate;
+      const same = (a, b) => a && b && a.view === b.view && JSON.stringify(a.params) === JSON.stringify(b.params);
+      navigate = function (view, params = {}) {
+        const before = currentView;
+        const res = orig.apply(this, arguments);
+        if (currentView === view || currentView !== before) {
+          const p = Object.assign({}, params); delete p.snap;
+          const entry = { view: currentView, params: Object.assign(p, { snap: { c: selectedClientId, p: selectedProjectId, f: isCurrentDocFlash } }) };
+          if (!moving && cur && !same(cur, entry)) {
+            back.push(cur); if (back.length > 40) back.shift(); fwd.length = 0;
+            // Une étape dans l'historique du navigateur : une commande « Précédent » envoyée par la souris arrive alors ici (popstate)
+            if (!window.DIGIT_IS_PHONE) { try { history.pushState({ digit: back.length }, ""); } catch (e) {} }
+          }
+          cur = entry;
+        }
+        return res;
+      };
+      function digitHistoryGo(dir) {
+        if (window.DIGIT_IS_PHONE) return;
+        const from = dir < 0 ? back : fwd, to = dir < 0 ? fwd : back;
+        // Une fenêtre est ouverte : « retour » la ferme simplement
+        const openModal = document.querySelector("#stampAdjOverlay, .m-dialog-overlay, .modal-overlay.open");
+        if (openModal) {
+          if (dir < 0) { if (openModal.classList.contains("modal-overlay") && openModal.id !== "confirmModal") openModal.classList.remove("open"); else if (openModal.id === "stampAdjOverlay") openModal.remove(); }
+          return;
+        }
+        // Pas d'historique (page ouverte directement) : « retour » remonte à la page parente, comme la flèche « ‹ » du haut
+        if (!from.length) {
+          if (dir < 0) { const bn = document.querySelector("#mainView .back-nav"); if (bn) bn.click(); }
+          return;
+        }
+        const e = from.pop();
+        if (cur) to.push(cur);
+        moving = true;
+        try {
+          const s = e.params.snap || {};
+          selectedClientId = s.c; selectedProjectId = s.p; isCurrentDocFlash = !!s.f;
+          const p = Object.assign({}, e.params); delete p.snap;
+          navigate(e.view, p);
+        } finally { moving = false; }
+      }
+      window.digitHistoryGo = digitHistoryGo;
+      const isBtn = ev => ev.button === 3 || ev.button === 4;
+      // Boutons latéraux (souris Logitech et autres) : pris dès l'appui ; le relâchement est ignoré pour ne pas compter deux fois
+      let lastBtnAt = 0;
+      window.addEventListener("mousedown", ev => { if (!isBtn(ev)) return; ev.preventDefault(); lastBtnAt = Date.now(); digitHistoryGo(ev.button === 3 ? -1 : 1); }, true);
+      ["mouseup", "auxclick"].forEach(t => window.addEventListener(t, ev => { if (isBtn(ev)) ev.preventDefault(); }, true));
+      // Certains logiciels de souris envoient « navigation » (Chrome) ou un raccourci clavier au lieu d'un bouton
+      window.addEventListener("popstate", () => { if (Date.now() - lastBtnAt > 400) digitHistoryGo(-1); });
+      window.digitHistoryFromMain = d => { if (Date.now() - lastBtnAt > 400) digitHistoryGo(d); };
+      window.addEventListener("keydown", ev => {
+        const tag = (ev.target && ev.target.tagName) || "";
+        if (/INPUT|TEXTAREA|SELECT/.test(tag) || (ev.target && ev.target.isContentEditable)) return;
+        if (ev.key === "BrowserBack" || (ev.altKey && ev.key === "ArrowLeft") || (ev.metaKey && (ev.key === "[" || ev.key === "ArrowLeft"))) { ev.preventDefault(); digitHistoryGo(-1); }
+        else if (ev.key === "BrowserForward" || (ev.altKey && ev.key === "ArrowRight") || (ev.metaKey && (ev.key === "]" || ev.key === "ArrowRight"))) { ev.preventDefault(); digitHistoryGo(1); }
+      });
+    })();
+    /* ===== V1.33 — FIN (retour / avance) ===== */
 
 
     setTimeout(() => {

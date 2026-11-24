@@ -98,31 +98,81 @@
   }
   buildMultimediaBg();
 
-  /* ---------- 5. Réglage du cachet (taille / position / rotation) ---------- */
-  window.openStampAdjustModal = function (accId) {
-    const acc = (state.accounts || []).find(a => a.id === accId);
-    if (!acc || !acc.signatureDataUrl) return showToast("Ajoutez d'abord un cachet pour ce poste.", true);
-    if (typeof canModifyAccount === "function" && !canModifyAccount(accId)) return showToast("Action réservée au propriétaire du studio.", true);
-    const cur = Object.assign({ s: 100, x: 0, y: 0, r: 0 }, acc.stampAdjust || {});
+  /* ---------- 5. Réglage du cachet : taille, position, rotation + retouche de l'image (v1.33) ----------
+     Recadrer les bords vides, agrandir (image plus grande et plus nette), adoucir les contours.
+     L'image d'origine est toujours gardée : « Réinitialiser » y revient. */
+  const STAMP_BOXES = { S: [150, 92, "Petit"], M: [195, 120, "Moyen"], L: [245, 150, "Grand"], XL: [295, 182, "Très grand"], XXL: [350, 216, "Maximum"] };
+  const loadImg = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+  // Bords vides = transparents ou presque blancs
+  async function stampTrim(src) {
+    const im = await loadImg(src);
+    const w = im.naturalWidth, h = im.naturalHeight;
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    const x = c.getContext("2d"); x.drawImage(im, 0, 0);
+    const d = x.getImageData(0, 0, w, h).data;
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y++) for (let k = 0; k < w; k++) {
+      const i = (y * w + k) * 4;
+      if (d[i + 3] > 24 && !(d[i] > 232 && d[i + 1] > 232 && d[i + 2] > 232)) { if (k < x0) x0 = k; if (k > x1) x1 = k; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    }
+    if (x1 < 0) return src;
+    const pad = Math.round(Math.max(x1 - x0, y1 - y0) * 0.03);
+    x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(w - 1, x1 + pad); y1 = Math.min(h - 1, y1 + pad);
+    const o = document.createElement("canvas"); o.width = x1 - x0 + 1; o.height = y1 - y0 + 1;
+    o.getContext("2d").drawImage(c, x0, y0, o.width, o.height, 0, 0, o.width, o.height);
+    return o.toDataURL("image/webp", 0.92);
+  }
+  // Agrandit l'image (lissage de haute qualité, par étapes) puis adoucit les contours
+  async function stampResample(src, target, soft) {
+    const im = await loadImg(src);
+    let w = im.naturalWidth, h = im.naturalHeight;
+    const k = Math.min(4, Math.max(1, target / Math.max(w, h)));
+    let cur = document.createElement("canvas"); cur.width = w; cur.height = h; cur.getContext("2d").drawImage(im, 0, 0);
+    const W = Math.round(w * k), H = Math.round(h * k);
+    while (cur.width < W) {
+      const n = document.createElement("canvas"); n.width = Math.min(W, cur.width * 2); n.height = Math.min(H, Math.round(cur.height * n.width / cur.width));
+      const x = n.getContext("2d"); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = "high"; x.drawImage(cur, 0, 0, n.width, n.height);
+      cur = n;
+    }
+    if (soft > 0) {
+      const n = document.createElement("canvas"); n.width = cur.width; n.height = cur.height;
+      const x = n.getContext("2d"); x.filter = `blur(${(soft * Math.max(1, k) * 0.5).toFixed(2)}px)`; x.drawImage(cur, 0, 0);
+      cur = n;
+    }
+    return cur.toDataURL("image/webp", 0.92);
+  }
+  const stampKeyOf = u => { u = String(u || ""); return u.length + ":" + u.slice(-48); };
+
+  function openStampEditor({ title, sub, image, original, adjust, onSave }) {
+    const base = original || image;
+    const cur = Object.assign({ s: 100, x: 0, y: 0, r: 0, box: "M" }, adjust || {});
+    const proc0 = Object.assign({ trim: false, up: false, soft: 0 }, cur.proc || {});
+    let box = STAMP_BOXES[cur.box] ? cur.box : "M";
+    let proc = Object.assign({}, proc0);
+    let result = image, busy = 0;
     const old = document.getElementById("stampAdjOverlay");
     if (old) old.remove();
     const ov = document.createElement("div");
     ov.id = "stampAdjOverlay";
     ov.className = "stamp-adj-overlay no-print";
-    const row = (id, label, min, max, step, unit) => `
+    const row = (id, label, min, max, step) => `
       <div class="stamp-adj-row"><label for="${id}">${label}</label>
         <input type="range" id="${id}" min="${min}" max="${max}" step="${step}" />
         <output id="${id}Out"></output></div>`;
+    const tog = (id, label) => `<button type="button" class="btn btn-secondary" id="${id}" style="padding:6px 11px; font-size:11.5px;">${label}</button>`;
     ov.innerHTML = `
       <div class="stamp-adj-card">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-          <div><div style="font-size:17px; font-weight:800;">Ajuster le cachet</div>
-          <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">Poste : ${String(acc.jobTitle || acc.name).replace(/[<>"]/g, "")}</div></div>
+          <div><div style="font-size:17px; font-weight:800;">${title}</div>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">${sub}</div></div>
           <button type="button" id="saClose" style="border:none; background:transparent; color:var(--text-muted); font-size:22px; cursor:pointer;">×</button>
         </div>
         <div class="stamp-adj-preview"><div class="stamp-adj-box"><img id="saImg" alt="" style="max-width:100%; max-height:100%; object-fit:contain; display:block;" /></div></div>
-        ${row("saS", "Taille", 20, 220, 1)}${row("saX", "Horizontal", -90, 90, 1)}${row("saY", "Vertical", -60, 60, 1)}${row("saR", "Rotation", -35, 35, 1)}
-        <div style="font-size:11.5px; color:var(--text-muted); margin:6px 0 14px;">Le cachet reste toujours à l'intérieur de son cadre sur la facture : il ne peut pas déborder.</div>
+        <div class="stamp-adj-row"><label>Retouche</label><div style="display:flex; gap:6px; flex-wrap:wrap;">${tog("saTrim", "Recadrer les bords vides")}${tog("saUp", "Agrandir l'image (plus nette)")}</div></div>
+        ${row("saSoft", "Adoucir", 0, 3, 0.5)}
+        <div class="stamp-adj-row"><label>Cadre sur la facture</label><div id="saBox" style="display:flex; gap:6px; flex-wrap:wrap;">${Object.keys(STAMP_BOXES).map(k => `<button type="button" class="btn btn-secondary" data-box="${k}" style="padding:5px 10px; font-size:11.5px;">${STAMP_BOXES[k][2]}</button>`).join("")}</div></div>
+        ${row("saS", "Taille", 20, 500, 1)}${row("saX", "Horizontal", -120, 120, 1)}${row("saY", "Vertical", -80, 80, 1)}${row("saR", "Rotation", -35, 35, 1)}
+        <div id="saBusy" style="font-size:11.5px; color:var(--text-muted); min-height:16px; margin:4px 0 10px;">Le cadre fixe la place du cachet sur la facture ; la taille agrandit ou réduit l'image dans ce cadre, sans jamais déborder.</div>
         <div style="display:flex; gap:9px; justify-content:flex-end; flex-wrap:wrap;">
           <button type="button" class="btn btn-secondary" id="saReset"><span>Réinitialiser</span></button>
           <button type="button" class="btn btn-secondary" id="saCancel"><span>Annuler</span></button>
@@ -131,28 +181,96 @@
       </div>`;
     document.body.appendChild(ov);
     const $ = id => document.getElementById(id);
-    $("saImg").src = acc.signatureDataUrl;
+    $("saImg").src = image;
+    const onOff = (el, on) => { el.style.background = on ? "#ea1d2c" : ""; el.style.color = on ? "#fff" : ""; el.style.borderColor = on ? "#ea1d2c" : ""; };
     const apply = () => {
+      const b = ov.querySelector(".stamp-adj-box");
+      if (b) { b.style.width = STAMP_BOXES[box][0] + "px"; b.style.height = STAMP_BOXES[box][1] + "px"; }
+      ov.querySelectorAll("#saBox [data-box]").forEach(x => onOff(x, x.dataset.box === box));
+      onOff($("saTrim"), proc.trim); onOff($("saUp"), proc.up);
       const s = Number($("saS").value), x = Number($("saX").value), y = Number($("saY").value), r = Number($("saR").value);
       $("saImg").style.transform = `translate(${x}px, ${y}px) scale(${s / 100}) rotate(${r}deg)`;
       $("saSOut").textContent = s + " %"; $("saXOut").textContent = x + " px"; $("saYOut").textContent = y + " px"; $("saROut").textContent = r + "°";
+      $("saSoftOut").textContent = Number($("saSoft").value) ? Number($("saSoft").value).toString().replace(".", ",") : "Non";
     };
-    const set = v => { $("saS").value = v.s; $("saX").value = v.x; $("saY").value = v.y; $("saR").value = v.r; apply(); };
+    // Recalcule l'image retouchée à partir de l'original (jamais à partir d'une copie déjà retouchée)
+    const rebuild = async () => {
+      const my = ++busy;
+      proc.soft = Number($("saSoft").value) || 0;
+      if (!proc.trim && !proc.up && !proc.soft) { result = base; $("saImg").src = base; return; }
+      $("saBusy").textContent = "Retouche en cours...";
+      try {
+        let img = base;
+        let small = false;
+        if (proc.trim) { img = await stampTrim(img); const t0 = await loadImg(img); small = Math.max(t0.naturalWidth, t0.naturalHeight) < 500; }
+        // Un cachet recadré trop petit est agrandi d'office (sinon il deviendrait flou une fois grossi)
+        if (proc.up || proc.soft || small) img = await stampResample(img, proc.up ? 900 : (small ? 700 : 0), proc.soft);
+        if (my !== busy) return;
+        result = img; $("saImg").src = img;
+        $("saBusy").textContent = "Retouche appliquée. Vous pouvez encore agrandir avec « Taille ».";
+      } catch (e) { $("saBusy").textContent = "Cette image ne peut pas être retouchée."; }
+    };
+    const set = v => { box = STAMP_BOXES[v.box] ? v.box : "M"; $("saS").value = v.s; $("saX").value = v.x; $("saY").value = v.y; $("saR").value = v.r; apply(); };
+    $("saSoft").value = proc.soft;
     set(cur);
     ["saS", "saX", "saY", "saR"].forEach(id => $(id).addEventListener("input", apply));
+    $("saSoft").addEventListener("input", apply);
+    $("saSoft").addEventListener("change", rebuild);
+    $("saTrim").onclick = () => { proc.trim = !proc.trim; apply(); rebuild(); };
+    $("saUp").onclick = () => { proc.up = !proc.up; apply(); rebuild(); };
+    ov.querySelectorAll("#saBox [data-box]").forEach(x => x.addEventListener("click", () => { box = x.dataset.box; apply(); }));
     const close = () => ov.remove();
     $("saClose").onclick = close; $("saCancel").onclick = close;
     ov.addEventListener("click", e => { if (e.target === ov) close(); });
-    $("saReset").onclick = () => set({ s: 100, x: 0, y: 0, r: 0 });
-    $("saSave").onclick = () => {
-      const v = { s: Number($("saS").value), x: Number($("saX").value), y: Number($("saY").value), r: Number($("saR").value) };
-      acc.stampAdjust = (v.s === 100 && !v.x && !v.y && !v.r) ? null : v;
-      acc._updatedAt = Date.now();
+    $("saReset").onclick = () => { proc = { trim: false, up: false, soft: 0 }; $("saSoft").value = 0; set({ s: 100, x: 0, y: 0, r: 0, box: "M" }); rebuild(); };
+    $("saSave").onclick = async () => {
+      if ($("saBusy").textContent === "Retouche en cours...") return;
+      const v = { s: Number($("saS").value), x: Number($("saX").value), y: Number($("saY").value), r: Number($("saR").value), box, proc: { trim: !!proc.trim, up: !!proc.up, soft: Number(proc.soft) || 0 } };
+      const plain = v.s === 100 && !v.x && !v.y && !v.r && box === "M" && !v.proc.trim && !v.proc.up && !v.proc.soft;
+      onSave({ adjust: plain ? null : v, image: result, original: result === base ? "" : base, changed: result !== image });
       saveState();
-      showToast("Réglage du cachet enregistré.");
+      showToast("Cachet enregistré.");
       close();
-      try { if (currentView === "gestion-sub") renderGestionSubModule(document.getElementById("mainView"), "accounts"); } catch (e) {}
+      try { rerenderCurrentView(); } catch (e) {}
     };
+  }
+
+  // Cachet d'un compte (Personnels, postes signataires)
+  window.openStampAdjustModal = function (accId) {
+    const acc = (state.accounts || []).find(a => a.id === accId);
+    if (!acc || !acc.signatureDataUrl) return showToast("Ajoutez d'abord un cachet pour ce poste.", true);
+    if (typeof canModifyAccount === "function" && !canModifyAccount(accId)) return showToast("Action réservée au propriétaire du studio.", true);
+    openStampEditor({
+      title: "Ajuster le cachet", sub: "Poste : " + String(acc.jobTitle || acc.name).replace(/[<>"]/g, ""),
+      image: acc.signatureDataUrl, original: acc.signatureOriginalDataUrl, adjust: acc.stampAdjust,
+      onSave: ({ adjust, image, original, changed }) => {
+        if (changed) { acc.stampOldKeys = [...new Set([...(acc.stampOldKeys || []), stampKeyOf(acc.signatureDataUrl)])].slice(-20); acc.signatureDataUrl = image; }
+        acc.signatureOriginalDataUrl = original || "";
+        acc.stampAdjust = adjust;
+        acc._updatedAt = Date.now();
+      }
+    });
+  };
+  // Cachet de la bibliothèque (Signatures & Cachets enregistrés)
+  window.openLibraryStampAdjust = function (sigId) {
+    const sig = (state.signatures || []).find(x => x.id === sigId);
+    if (!sig || !sig.dataUrl) return;
+    if (typeof getCurrentRole === "function" && getCurrentRole() !== "ADMIN") return showToast("Réservé à l'Administrateur.", true);
+    openStampEditor({
+      title: "Ajuster le cachet", sub: String(sig.title || "Cachet").replace(/[<>"]/g, ""),
+      image: sig.dataUrl, original: sig.originalDataUrl, adjust: sig.adjust,
+      onSave: ({ adjust, image, original, changed }) => {
+        if (changed) {
+          const prev = sig.dataUrl;
+          sig.oldKeys = [...new Set([...(sig.oldKeys || []), stampKeyOf(prev)])].slice(-20);
+          sig.dataUrl = image;
+          if (state.companyInfo.customStampDataUrl === prev) { state.companyInfo.customStampDataUrl = image; state.companyInfo._updatedAt = Date.now(); }
+        }
+        sig.originalDataUrl = original || "";
+        sig.adjust = adjust;
+        sig._updatedAt = Date.now();
+      }
+    });
   };
 
   // Ancien numéro WhatsApp mémorisé par l'envoi automatique (retiré en v1.4)

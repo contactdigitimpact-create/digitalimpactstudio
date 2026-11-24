@@ -121,6 +121,12 @@ body.is-mobile .m-tabbar {
 .m-seg { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 11px 6px; border: none; border-radius: 12px; background: transparent; color: var(--text-muted); font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .m-seg svg { width: 18px; height: 18px; }
 .m-seg.active { background: var(--bg-card-hover); color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+/* 1.32 : petits téléphones (320 à 360 px de large, tous modèles) : la barre Résumé / IA / Projets / Agenda reste entière dans l'écran */
+@media (max-width: 360px) {
+  .m-segbar { gap: 3px; padding: 4px; }
+  .m-seg { min-width: 0; gap: 4px; padding: 10px 3px; font-size: 12.5px; }
+  .m-seg > span:first-child { width: 15px !important; height: 15px !important; }
+}
 
 /* ---------- Accueil Facturation (dossiers + projets récents) ---------- */
 .m-page-title { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; margin: 4px 0 14px; }
@@ -461,3 +467,27 @@ body.is-mobile .back-nav { min-height: 40px; }
 .m-sheet-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 body.is-mobile .digit-sort { height: 36px; padding: 0 10px; }
 body.is-mobile .digit-sort select { font-size: 16px; max-width: 150px; }
+
+/* v1.33 : boutons moins / plus de la sortie matériel, plus grands au doigt */
+body.is-mobile .qty-step-btn { width: 40px; height: 38px; }
+body.is-mobile .qty-step-val { min-width: 34px; font-size: 15px; }
+
+/* v1.33 : fenêtres ouvertes depuis une autre fenêtre (« Gérer les logos », secteurs, modèles de prix) :
+   elles passent devant (avant : cachées derrière), et restent sous les questions de confirmation */
+body.is-mobile #clientLogoTemplatesModal,
+body.is-mobile #sectorTemplatesModal,
+body.is-mobile #pricingTemplateEditorModal { z-index: 990 !important; }
+
+/* v1.33 : montants sur une ligne, réduits automatiquement s'ils sont trop longs (mobile.js : fitAmounts) */
+body.is-mobile .m-balance-value,
+body.is-mobile .m-balance-bottom strong,
+body.is-mobile .m-sheet-card .r .t,
+body.is-mobile .fin-kpi-value,
+body.is-mobile .nowrap-amount { white-space: nowrap; overflow: hidden; text-overflow: clip; max-width: 100%; }
+body.is-mobile .m-balance-bottom > div { flex: 1 1 0; min-width: 0; }
+body.is-mobile .m-tva-head { flex-wrap: wrap; row-gap: 6px; }
+body.is-mobile .m-tva-head > div:first-child { flex: 1 1 150px; min-width: 0; }
+body.is-mobile .m-tva-total { flex: 0 1 auto; min-width: 0; max-width: 100%; overflow: hidden; }
+body.is-mobile .m-balance-bottom.m-stack { flex-direction: column; gap: 8px; }
+body.is-mobile .m-balance-bottom.m-stack > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; text-align: left !important; }
+body.is-mobile .m-balance-bottom.m-stack strong { margin-top: 0; flex: 0 1 auto; min-width: 0; }
